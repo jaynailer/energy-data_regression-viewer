@@ -34,9 +34,9 @@ export function StatisticalResultsMultiple() {
   const formatEquation = (results: any) => {
     if (!results?.coefficients) return 'N/A';
     
-    const intercept = results.coefficients[0].coef;
-    const degreeDay = results.coefficients[1].coef;
-    const predictor = results.coefficients[2].coef;
+    const intercept = isNaN(results.coefficients[0].coef) ? 0 : results.coefficients[0].coef;
+    const degreeDay = isNaN(results.coefficients[1].coef) ? 0 : results.coefficients[1].coef;
+    const predictor = isNaN(results.coefficients[2].coef) ? 0 : results.coefficients[2].coef;
     const degreeDayVar = results.coefficients[1].variable;
     
     return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
@@ -84,7 +84,7 @@ export function StatisticalResultsMultiple() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.model_summary?.r_squared?.toFixed(3) || 'N/A'}
+                    {!isNaN(result?.model_summary?.r_squared) ? result.model_summary.r_squared.toFixed(3) : 'N/A'}
                   </td>
                 ))}
               </tr>
@@ -98,7 +98,7 @@ export function StatisticalResultsMultiple() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.model_summary?.adj_r_squared?.toFixed(3) || 'N/A'}
+                    {!isNaN(result?.model_summary?.adj_r_squared) ? result.model_summary.adj_r_squared.toFixed(3) : 'N/A'}
                   </td>
                 ))}
               </tr>
@@ -112,7 +112,7 @@ export function StatisticalResultsMultiple() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.coefficients?.[1]?.p_value?.toExponential(2) || 'N/A'}
+                    {!isNaN(result?.coefficients?.[1]?.p_value) ? result.coefficients[1].p_value.toExponential(2) : 'N/A'}
                   </td>
                 ))}
               </tr>
@@ -126,7 +126,7 @@ export function StatisticalResultsMultiple() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.coefficients?.[2]?.p_value?.toExponential(2) || 'N/A'}
+                    {!isNaN(result?.coefficients?.[2]?.p_value) ? result.coefficients[2].p_value.toExponential(2) : 'N/A'}
                   </td>
                 ))}
               </tr>
@@ -140,7 +140,7 @@ export function StatisticalResultsMultiple() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.model_summary?.f_statistic?.toFixed(2) || 'N/A'}
+                    {!isNaN(result?.model_summary?.f_statistic) ? result.model_summary.f_statistic.toFixed(2) : 'N/A'}
                   </td>
                 ))}
               </tr>
@@ -154,7 +154,7 @@ export function StatisticalResultsMultiple() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.model_summary?.prob_f_statistic || 'N/A'}
+                    {result?.model_summary?.prob_f_statistic === 'nan' ? 'N/A' : result?.model_summary?.prob_f_statistic}
                   </td>
                 ))}
               </tr>
@@ -168,7 +168,7 @@ export function StatisticalResultsMultiple() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.diagnostics?.condition_number?.toFixed(2) || 'N/A'}
+                    {!isNaN(result?.diagnostics?.condition_number) ? result.diagnostics.condition_number.toFixed(2) : 'N/A'}
                   </td>
                 ))}
               </tr>
