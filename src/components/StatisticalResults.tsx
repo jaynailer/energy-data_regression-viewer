@@ -96,7 +96,9 @@ export function StatisticalResults() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.coefficients?.[1]?.p_value) ? result.coefficients[1].p_value.toExponential(2) : 'N/A'}
+                    {result?.coefficients?.[1]?.p_value != null && !isNaN(result?.coefficients?.[1]?.p_value) 
+                      ? result.coefficients[1].p_value.toExponential(2) 
+                      : 'N/A'}
                   </td>
                 ))}
               </tr>
