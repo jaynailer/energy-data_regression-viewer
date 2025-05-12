@@ -24,12 +24,12 @@ export function MultipleRegression() {
 
   // Format equation for display
   const formatEquation = (results: any) => {
-    if (!results?.coefficients) return 'N/A';
+    if (!results?.coefficients || results.coefficients.length < 3) return 'N/A';
     
-    const intercept = results.coefficients[0].coef;
-    const degreeDay = results.coefficients[1].coef;
-    const predictor = results.coefficients[2].coef;
-    const degreeDayVar = results.coefficients[1].variable;
+    const intercept = results.coefficients[0]?.coef ?? 0;
+    const degreeDay = results.coefficients[1]?.coef ?? 0;
+    const predictor = results.coefficients[2]?.coef ?? 0;
+    const degreeDayVar = results.coefficients[1]?.variable ?? 'DD';
     const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
     
     return `Usage = ${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
