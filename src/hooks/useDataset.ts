@@ -42,7 +42,11 @@ export function useDatasetFetch(datasetId: string) {
       const sanitizedText = text
         .replace(/:NaN,/g, ':null,')
         .replace(/:NaN}/g, ':null}')
-        .replace(/:"nan"/g, ':null');
+        .replace(/:"nan"/g, ':null')
+        .replace(/:Infinity,/g, ':null,')
+        .replace(/:Infinity}/g, ':null}')
+        .replace(/:-Infinity,/g, ':null,')
+        .replace(/:-Infinity}/g, ':null}');
       
       const jsonData = JSON.parse(sanitizedText);
       setData(jsonData);
