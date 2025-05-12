@@ -38,12 +38,26 @@ export function MultipleRegression() {
   useEffect(() => {
     if (!containerRef.current || !data?.dataset?.usage_data || !selectedTemp) return;
 
-    // Get data points
-    const points = data.dataset.usage_data.map(entry => ({
-      x: entry[selectedTemp],
-      y: entry.usage,
-      z: entry.predictor_1 || 0
-    }));
+    // Get data points and filter out invalid values
+    const validPoints = data.dataset.usage_data
+      .filter(entry => 
+        typeof entry[selectedTemp] === 'number' && 
+        !isNaN(entry[selectedTemp]) &&
+        typeof entry.usage === 'number' && 
+        !isNaN(entry.usage) &&
+        typeof entry.predictor_1 === 'number' && 
+        !isNaN(entry.predictor_1)
+      )
+      .map(entry => ({
+        x: entry[selectedTemp],
+        y: entry.usage,
+        z: entry.predictor_1 || 0
+      }));
+
+    if (validPoints.length === 0) {
+      console.warn('No valid data points found');
+      return;
+    }
 
     // Set up scene
     const scene = new THREE.Scene();
@@ -64,10 +78,10 @@ export function MultipleRegression() {
     const axesHelper = new THREE.AxesHelper(1);
     scene.add(axesHelper);
 
-    // Normalize data points
-    const xValues = points.map(p => p.x);
-    const yValues = points.map(p => p.y);
-    const zValues = points.map(p => p.z);
+    // Normalize data points with safety checks
+    const xValues = validPoints.map(p => p.x);
+    const yValues = validPoints.map(p => p.y);
+    const zValues = validPoints.map(p => p.z);
 
     const xMin = Math.min(...xValues);
     const xMax = Math.max(...xValues);
@@ -78,14 +92,14 @@ export function MultipleRegression() {
 
     // Create points geometry
     const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(points.length * 3);
-    const colors = new Float32Array(points.length * 3);
+    const positions = new Float32Array(validPoints.length * 3);
+    const colors = new Float32Array(validPoints.length * 3);
 
-    points.forEach((point, i) => {
-      // Normalize coordinates to [-1, 1] range
-      const x = ((point.x - xMin) / (xMax - xMin)) * 2 - 1;
-      const y = ((point.y - yMin) / (yMax - yMin)) * 2 - 1;
-      const z = ((point.z - zMin) / (zMax - zMin)) * 2 - 1;
+    validPoints.forEach((point, i) => {
+      // Normalize coordinates to [-1, 1] range with safety checks
+      const x = xMax === xMin ? 0 : ((point.x - xMin) / (xMax - xMin)) * 2 - 1;
+      const y = yMax === yMin ? 0 : ((point.y - yMin) / (yMax - yMin)) * 2 - 1;
+      const z = zMax === zMin ? 0 : ((point.z - zMin) / (zMax - zMin)) * 2 - 1;
 
       positions[i * 3] = x;
       positions[i * 3 + 1] = y;
