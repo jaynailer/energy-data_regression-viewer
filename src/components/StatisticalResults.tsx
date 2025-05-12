@@ -33,9 +33,9 @@ export function StatisticalResults() {
   const formatEquation = (results: any) => {
     if (!results?.coefficients) return 'N/A';
     
-    const intercept = isNaN(results.coefficients[0].coef) ? 0 : results.coefficients[0].coef;
-    const coefficient = isNaN(results.coefficients[1].coef) ? 0 : results.coefficients[1].coef;
-    const variable = results.coefficients[1].variable;
+    const intercept = results.coefficients[0]?.coef != null && !isNaN(results.coefficients[0].coef) ? results.coefficients[0].coef : 0;
+    const coefficient = results.coefficients[1]?.coef != null && !isNaN(results.coefficients[1].coef) ? results.coefficients[1].coef : 0;
+    const variable = results.coefficients[1]?.variable || '';
     
     return `${intercept.toFixed(2)} ${coefficient >= 0 ? '+' : ''}${coefficient.toFixed(2)} × ${variable}`;
   };
@@ -82,7 +82,9 @@ export function StatisticalResults() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.model_summary?.r_squared) ? result.model_summary.r_squared.toFixed(3) : 'N/A'}
+                    {result?.model_summary?.r_squared != null && !isNaN(result.model_summary.r_squared) 
+                      ? result.model_summary.r_squared.toFixed(3) 
+                      : 'N/A'}
                   </td>
                 ))}
               </tr>
@@ -96,7 +98,7 @@ export function StatisticalResults() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.coefficients?.[1]?.p_value != null && !isNaN(result?.coefficients?.[1]?.p_value) 
+                    {result?.coefficients?.[1]?.p_value != null && !isNaN(result.coefficients[1].p_value) 
                       ? result.coefficients[1].p_value.toExponential(2) 
                       : 'N/A'}
                   </td>
@@ -112,7 +114,9 @@ export function StatisticalResults() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.model_summary?.f_statistic) ? result.model_summary.f_statistic.toFixed(2) : 'N/A'}
+                    {result?.model_summary?.f_statistic != null && !isNaN(result.model_summary.f_statistic) 
+                      ? result.model_summary.f_statistic.toFixed(2) 
+                      : 'N/A'}
                   </td>
                 ))}
               </tr>
@@ -126,9 +130,9 @@ export function StatisticalResults() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.model_summary?.prob_f_statistic === 'nan' || result?.model_summary?.prob_f_statistic == null 
-                      ? 'N/A' 
-                      : result.model_summary.prob_f_statistic.toFixed(4)}
+                    {result?.model_summary?.prob_f_statistic != null && result.model_summary.prob_f_statistic !== 'nan' 
+                      ? result.model_summary.prob_f_statistic.toFixed(4) 
+                      : 'N/A'}
                   </td>
                 ))}
               </tr>
@@ -142,7 +146,9 @@ export function StatisticalResults() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.diagnostics?.condition_number) ? result.diagnostics.condition_number.toFixed(2) : 'N/A'}
+                    {result?.diagnostics?.condition_number != null && !isNaN(result.diagnostics.condition_number) 
+                      ? result.diagnostics.condition_number.toFixed(2) 
+                      : 'N/A'}
                   </td>
                 ))}
               </tr>
