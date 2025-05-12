@@ -32,12 +32,12 @@ export function StatisticalResultsMultiple() {
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
 
   const formatEquation = (results: any) => {
-    if (!results?.coefficients) return 'N/A';
+    if (!results?.coefficients || results.coefficients.length < 3) return 'N/A';
     
-    const intercept = isNaN(results.coefficients[0].coef) ? 0 : results.coefficients[0].coef;
-    const degreeDay = isNaN(results.coefficients[1].coef) ? 0 : results.coefficients[1].coef;
-    const predictor = isNaN(results.coefficients[2].coef) ? 0 : results.coefficients[2].coef;
-    const degreeDayVar = results.coefficients[1].variable;
+    const intercept = results.coefficients[0]?.coef ?? 0;
+    const degreeDay = results.coefficients[1]?.coef ?? 0;
+    const predictor = results.coefficients[2]?.coef ?? 0;
+    const degreeDayVar = results.coefficients[1]?.variable ?? 'Degree Days';
     
     return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
   };
