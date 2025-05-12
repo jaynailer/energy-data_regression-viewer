@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "prebuild": "npm version patch --no-git-tag-version",
+    "build": "vite build", 
     "lint": "eslint .",
     "preview": "vite preview"
   },
