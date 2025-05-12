@@ -99,7 +99,7 @@ export function StatisticalResults() {
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
                     {result?.coefficients?.[1]?.p_value != null && !isNaN(result.coefficients[1].p_value) 
-                      ? result.coefficients[1].p_value.toExponential(2) 
+                      ? result.coefficients[1].p_value.toFixed(6)
                       : 'N/A'}
                   </td>
                 ))}
@@ -133,7 +133,7 @@ export function StatisticalResults() {
                     {result?.model_summary?.prob_f_statistic != null && 
                      typeof result.model_summary.prob_f_statistic === 'number' && 
                      !isNaN(result.model_summary.prob_f_statistic)
-                      ? result.model_summary.prob_f_statistic.toFixed(4) 
+                      ? result.model_summary.prob_f_statistic.toFixed(6)
                       : 'N/A'}
                   </td>
                 ))}
