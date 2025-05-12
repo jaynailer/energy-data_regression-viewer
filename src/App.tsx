@@ -76,13 +76,7 @@ function App() {
   return (
     <div className="min-h-screen bg-[#f5f7f5] p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <ProjectInfo 
-          info={{
-            title: data?.metadata?.title ?? 'Regression Analysis Project',
-            description: data?.metadata?.description ?? 'Analysis of dataset correlations and relationships',
-            lastUpdated: new Date().toLocaleDateString()
-          }}
-        />
+        <ProjectInfo />
         
         <div className="grid grid-cols-1 gap-6">
           <Map />
