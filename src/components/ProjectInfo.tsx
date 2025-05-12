@@ -12,8 +12,7 @@ export function ProjectInfo() {
   
   const info = {
     title: `Regression Analysis of "${data?.dataset?.metadata?.project_name || 'Untitled Project'}"`,
-    description: data?.metadata?.description ?? 'Analysis of dataset correlations and relationships',
-    lastUpdated: new Date().toLocaleDateString()
+    description: data?.metadata?.description ?? 'Analysis of dataset correlations and relationships'
   };
 
   return (
@@ -23,7 +22,6 @@ export function ProjectInfo() {
         <h2 className="text-2xl font-bold text-[#2C5265]">{info.title}</h2>
       </div>
       <p className="text-[#1D131E] mb-4">{info.description}</p>
-      <p className="text-sm text-[#7984A5]">Last updated: {info.lastUpdated}</p>
     </div>
   );
 }
