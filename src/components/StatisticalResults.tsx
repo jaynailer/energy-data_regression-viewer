@@ -130,7 +130,9 @@ export function StatisticalResults() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.model_summary?.prob_f_statistic != null && result.model_summary.prob_f_statistic !== 'nan' 
+                    {result?.model_summary?.prob_f_statistic != null && 
+                     typeof result.model_summary.prob_f_statistic === 'number' && 
+                     !isNaN(result.model_summary.prob_f_statistic)
                       ? result.model_summary.prob_f_statistic.toFixed(4) 
                       : 'N/A'}
                   </td>
