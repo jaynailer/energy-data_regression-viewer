@@ -37,7 +37,14 @@ export function useDatasetFetch(datasetId: string) {
         throw new Error('Failed to fetch dataset. Please try again later.');
       }
 
-      const jsonData = await response.json();
+      // Replace NaN with null in the response text before parsing
+      const text = await response.text();
+      const sanitizedText = text
+        .replace(/:NaN,/g, ':null,')
+        .replace(/:NaN}/g, ':null}')
+        .replace(/:"nan"/g, ':null');
+      
+      const jsonData = JSON.parse(sanitizedText);
       setData(jsonData);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error occurred'));
