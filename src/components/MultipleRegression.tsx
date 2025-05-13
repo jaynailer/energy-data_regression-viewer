@@ -45,6 +45,12 @@ export function MultipleRegression() {
   const prepareChartData = () => {
     if (!data?.dataset?.usage_data || !selectedTemp) return [];
 
+    console.log('Preparing chart data:', {
+      selectedTemp,
+      showSimple,
+      totalDataPoints: data.dataset.usage_data.length
+    });
+
     return data.dataset.usage_data
       .filter(entry => 
         typeof entry[selectedTemp] === 'number' && 
@@ -62,11 +68,26 @@ export function MultipleRegression() {
       }));
   };
 
+  useEffect(() => {
+    const chartData = prepareChartData();
+    console.log('Chart data prepared:', {
+      points: chartData.length,
+      samplePoint: chartData[0]
+  };
+
   const getRegressionLineData = () => {
     const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
+    console.log('Getting regression line data:', {
+      showSimple,
+      selectedTemp,
+      predictorName
+    });
+
     const results = showSimple 
       ? data?.dataset?.regression_results?.simple_regressions?.[selectedTemp]
       : data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`];
+
+    console.log('Regression results:', results);
 
     if (!results?.coefficients) return [];
 
@@ -76,6 +97,12 @@ export function MultipleRegression() {
     if (showSimple) {
       const intercept = results.coefficients[0]?.coef ?? 0;
       const coefficient = results.coefficients[1]?.coef ?? 0;
+
+      console.log('Regression line parameters:', {
+        intercept,
+        coefficient,
+        pointCount: points.length
+      });
 
       // Use actual x values for the line
       return points.map(point => ({
