@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseKey) {
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface InterpretationPayload {
-  metadata: any;
+  parameters: any;
   regression_results: {
     multiple_regressions: any;
   };

@@ -14,7 +14,7 @@ export function ResultsInterpretation() {
     setError(null);
     try {
       const payload = {
-        metadata: data?.dataset?.metadata,
+        parameters: data?.dataset?.metadata?.parameters,
         regression_results: {
           multiple_regressions: data?.dataset?.metadata?.parameters?.kind === 'none'
             ? { none: data?.dataset?.regression_results?.multiple_regressions?.none }
@@ -22,7 +22,7 @@ export function ResultsInterpretation() {
         }
       };
 
-      if (!payload.regression_results.multiple_regressions) {
+      if (!payload.parameters || !payload.regression_results.multiple_regressions) {
         throw new Error('No regression results available');
       }
 
