@@ -2,7 +2,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Network } from 'lucide-react';
 import * as THREE from 'three';
 import { useDatasetContext } from '../context/DatasetContext';
-export default function MultipleRegression() {
+
+export function MultipleRegression() {
   const { data } = useDatasetContext();
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedTemp, setSelectedTemp] = useState<string>('');
@@ -242,5 +243,3 @@ export default function MultipleRegression() {
     </div>
   );
 }
-
-export { MultipleRegression }

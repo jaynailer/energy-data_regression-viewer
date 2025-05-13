@@ -133,7 +133,7 @@ export function StatisticalResultsMultiple() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.coefficients?.[1]?.p_value) ? result.coefficients[1].p_value.toExponential(2) : 'N/A'}
+                    {!isNaN(result?.coefficients?.[1]?.p_value) ? result.coefficients[1].p_value.toFixed(6) : 'N/A'}
                   </td>
                 ))}
               </tr>
@@ -147,7 +147,7 @@ export function StatisticalResultsMultiple() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.coefficients?.[2]?.p_value) ? result.coefficients[2].p_value.toExponential(2) : 'N/A'}
+                    {!isNaN(result?.coefficients?.[2]?.p_value) ? result.coefficients[2].p_value.toFixed(6) : 'N/A'}
                   </td>
                 ))}
               </tr>
@@ -175,7 +175,9 @@ export function StatisticalResultsMultiple() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.model_summary?.prob_f_statistic === 'nan' ? 'N/A' : result?.model_summary?.prob_f_statistic}
+                    {result?.model_summary?.prob_f_statistic === 'nan' ? 'N/A' : 
+                     typeof result?.model_summary?.prob_f_statistic === 'number' ? 
+                     result.model_summary.prob_f_statistic.toFixed(6) : 'N/A'}
                   </td>
                 ))}
               </tr>
