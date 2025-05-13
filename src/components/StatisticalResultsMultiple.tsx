@@ -40,7 +40,9 @@ export function StatisticalResultsMultiple() {
   // Format column header
   const formatColumnHeader = (temp: string) => {
     if (temp === 'none') return predictorName;
-    return `${temp.replace(/^(cdd|hdd)/i, (match) => match.toUpperCase())} & ${predictorName}`;
+    const [kind, baseTemp] = temp.match(/(hdd|cdd)\(([^)]+)\)/i)?.slice(1) || [];
+    if (!kind || !baseTemp) return temp;
+    return `${kind.toUpperCase()}(${baseTemp}) & ${predictorName}`;
   };
 
   // Format table rows based on regression type
