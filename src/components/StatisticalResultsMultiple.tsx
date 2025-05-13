@@ -124,18 +124,24 @@ export function StatisticalResultsMultiple() {
   const formatEquation = (results: any) => {
     if (!results?.coefficients) return 'N/A';
     
+    const getVariableName = (variable: string) => {
+      if (variable.startsWith('predictor_')) {
+        const index = parseInt(variable.split('_')[1]) - 1;
+        return data?.dataset?.metadata?.parameters?.predictors?.[index]?.name || variable;
+      }
+      return variable;
+    };
+    
     const intercept = results.coefficients[0]?.coef ?? 0;
     const degreeDay = results.coefficients[1]?.coef ?? 0;
-    const degreeDayVar = results.coefficients[1]?.variable ?? 'Degree Days';
+    const degreeDayVar = getVariableName(results.coefficients[1]?.variable ?? 'Degree Days');
     
     if (showSimple) {
-      if (degreeDayVar === 'predictor_1') {
-        return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${predictorName}`;
-      }
       return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar}`;
     } else {
       const predictor = results.coefficients[2]?.coef ?? 0;
-      return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
+      const predictorVar = getVariableName(results.coefficients[2]?.variable ?? '');
+      return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorVar}`;
     }
   };
 
