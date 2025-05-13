@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Network, SwitchCamera } from 'lucide-react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ZAxis } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line } from 'recharts';
 import { useDatasetContext } from '../context/DatasetContext';
 import { useRegressionType } from '../context/RegressionTypeContext';
 
@@ -45,13 +45,7 @@ export function MultipleRegression() {
   const prepareChartData = () => {
     if (!data?.dataset?.usage_data || !selectedTemp) return [];
 
-    console.log('Preparing chart data:', {
-      selectedTemp,
-      showSimple,
-      totalDataPoints: data.dataset.usage_data.length
-    });
-
-    return data.dataset.usage_data
+    const validPoints = data.dataset.usage_data
       .filter(entry => 
         typeof entry[selectedTemp] === 'number' && 
         !isNaN(entry[selectedTemp]) &&
@@ -59,62 +53,47 @@ export function MultipleRegression() {
         !isNaN(entry.usage) &&
         typeof entry.predictor_1 === 'number' && 
         !isNaN(entry.predictor_1)
-      )
+      );
+
+    return validPoints
       .map(entry => ({
         x: entry[selectedTemp],
         y: entry.usage,
-        z: entry.predictor_1,
-        size: showSimple ? 60 : entry.predictor_1
+        z: entry.predictor_1
       }));
   };
 
-  useEffect(() => {
-    const chartData = prepareChartData();
-    console.log('Chart data prepared:', {
-      dataPoints: chartData.length,
-      samplePoint: chartData[0],
-      selectedTemp,
-      showSimple
-    });
-  }, [data, selectedTemp, showSimple]);
-
   const getRegressionLineData = () => {
-    const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
-    console.log('Getting regression line data:', {
-      showSimple,
-      selectedTemp,
-      predictorName
-    });
-
     const results = showSimple 
       ? data?.dataset?.regression_results?.simple_regressions?.[selectedTemp]
-      : data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`];
-
-    console.log('Regression results:', results);
+      : data?.dataset?.regression_results?.multiple_regressions?.[selectedTemp];
 
     if (!results?.coefficients) return [];
 
     const points = prepareChartData();
     if (points.length === 0) return [];
 
-    if (showSimple) {
-      const intercept = results.coefficients[0]?.coef ?? 0;
-      const coefficient = results.coefficients[1]?.coef ?? 0;
+    const intercept = results.coefficients[0]?.coef ?? 0;
+    const coefficient = results.coefficients[1]?.coef ?? 0;
+    const predictor = !showSimple ? results.coefficients[2]?.coef ?? 0 : 0;
 
-      console.log('Regression line parameters:', {
-        intercept,
-        coefficient,
-        pointCount: points.length
-      });
+    // Sort points by x value for smooth line
+    const sortedPoints = [...points].sort((a, b) => a.x - b.x);
 
-      // Use actual x values for the line
-      return points.map(point => ({
-        x: point.x,
-        y: intercept + coefficient * point.x
-      }));
-    }
+    // Create line points
+    return sortedPoints.map(point => ({
+      x: point.x,
+      y: showSimple 
+        ? intercept + coefficient * point.x
+        : intercept + coefficient * point.x + predictor * point.z
+    }));
+  };
 
-    return [];
+  const formatTemp = (temp: string) => {
+    const match = temp.match(/(hdd|cdd)\((\d+(?:\.\d+)?)\)/i);
+    if (!match) return temp;
+    const [_, kind, baseTemp] = match;
+    return `${kind.toUpperCase()} (${parseFloat(baseTemp)}°C)`;
   };
 
   const chartData = prepareChartData();
@@ -122,7 +101,7 @@ export function MultipleRegression() {
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
   const results = showSimple 
     ? data?.dataset?.regression_results?.simple_regressions?.[selectedTemp]
-    : data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`];
+    : data?.dataset?.regression_results?.multiple_regressions?.[selectedTemp];
 
   return (
     <div className="bg-[#f5f7f5] rounded-[25px] p-6 shadow-lg">
@@ -176,10 +155,10 @@ export function MultipleRegression() {
                 <XAxis
                   type="number"
                   dataKey="x"
-                  name={selectedTemp}
+                  name={formatTemp(selectedTemp)}
                   tick={{ fontSize: 11 }}
                   tickFormatter={(value) => value.toLocaleString()}
-                  label={{ value: selectedTemp, position: 'bottom', offset: 20 }}
+                  label={{ value: formatTemp(selectedTemp), position: 'bottom', offset: 20 }}
                 />
                 <YAxis
                   type="number"
@@ -189,13 +168,6 @@ export function MultipleRegression() {
                   tickFormatter={(value) => value.toLocaleString()}
                   label={{ value: 'Usage', angle: -90, position: 'insideLeft', offset: -20 }}
                 />
-                {!showSimple && (
-                  <ZAxis
-                    dataKey="size"
-                    name={predictorName}
-                    range={[50, 400]}
-                  />
-                )}
                 <Tooltip
                   cursor={{ strokeDasharray: '3 3' }}
                   content={({ active, payload }) => {
@@ -222,16 +194,16 @@ export function MultipleRegression() {
                   name="Data Points"
                   data={chartData}
                   fill={showSimple ? "#2C5265" : "#AD435A"}
-                  fillOpacity={0.6}
+                  fillOpacity={0.7}
                   shape="circle"
                   legendType="none"
                 />
-                {showSimple && lineData.length > 0 && (
+                {lineData.length > 0 && (
                   <Line
                     type="linear"
                     dataKey="y"
                     data={lineData}
-                    stroke="#AD435A"
+                    stroke={showSimple ? "#AD435A" : "#2C5265"}
                     strokeWidth={2}
                     dot={false}
                     activeDot={false}
