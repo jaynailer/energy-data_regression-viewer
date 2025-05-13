@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Network } from 'lucide-react';
+import { Network, SwitchCamera } from 'lucide-react';
 import * as THREE from 'three';
 import { useDatasetContext } from '../context/DatasetContext';
 import { useRegressionType } from '../context/RegressionTypeContext';
@@ -243,22 +243,6 @@ export function MultipleRegression() {
             <span>Switch to {showSimple ? 'Multiple' : 'Simple'} Regression</span>
           </button>
         </div>
-      </div>
-            {baseTemps.map(temp => (
-              <button
-                key={temp}
-                onClick={() => setSelectedTemp(temp)}
-                className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                  selectedTemp === temp
-                    ? 'bg-[#2C5265] text-white'
-                    : 'bg-white text-[#2C5265] hover:bg-[#2C5265]/10'
-                }`}
-              > 
-                {temp.replace(/^(cdd|hdd)/i, (match) => match.toUpperCase())}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
       
       <div className="space-y-4">
