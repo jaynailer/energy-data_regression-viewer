@@ -244,4 +244,4 @@ export function MultipleRegression() {
   );
 }
 
-export { MultipleRegression }
+export default MultipleRegression;
