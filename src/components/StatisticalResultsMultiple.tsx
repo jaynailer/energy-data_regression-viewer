@@ -40,15 +40,13 @@ export function StatisticalResultsMultiple() {
   // Format column header
   const formatColumnHeader = (temp: string) => {
     if (showSimple) {
-      if (temp === 'none') return predictorName;
       const match = temp.match(/(hdd|cdd)\(([^)]+)\)/i);
-      if (!match) return temp;
+      if (!match) return predictorName;
       const [_, kind, baseTemp] = match;
       return `${kind.toUpperCase()}(${baseTemp})`;
     } else {
-      if (temp === 'none') return predictorName;
       const match = temp.match(/(hdd|cdd)\(([^)]+)\)/i);
-      if (!match) return temp;
+      if (!match) return predictorName;
       const [_, kind, baseTemp] = match;
       return `${kind.toUpperCase()}(${baseTemp}) & ${predictorName}`;
     }
@@ -124,24 +122,15 @@ export function StatisticalResultsMultiple() {
   const formatEquation = (results: any) => {
     if (!results?.coefficients) return 'N/A';
     
-    const getVariableName = (variable: string) => {
-      if (variable.startsWith('predictor_')) {
-        const index = parseInt(variable.split('_')[1]) - 1;
-        return data?.dataset?.metadata?.parameters?.predictors?.[index]?.name || variable;
-      }
-      return variable;
-    };
-    
     const intercept = results.coefficients[0]?.coef ?? 0;
     const degreeDay = results.coefficients[1]?.coef ?? 0;
-    const degreeDayVar = getVariableName(results.coefficients[1]?.variable ?? 'Degree Days');
+    const degreeDayVar = results.coefficients[1]?.variable ?? 'Degree Days';
     
     if (showSimple) {
       return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar}`;
     } else {
       const predictor = results.coefficients[2]?.coef ?? 0;
-      const predictorVar = getVariableName(results.coefficients[2]?.variable ?? '');
-      return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorVar}`;
+      return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
     }
   };
 
