@@ -12,17 +12,21 @@ export function ResultsInterpretation() {
   const generateInterpretation = async () => {
     setLoading(true);
     setError(null);
-    
     try {
-      const regressionResults = data?.dataset?.metadata?.parameters?.kind === 'none' 
-        ? { none: data?.dataset?.regression_results?.none }
-        : data?.dataset?.regression_results;
+      const payload = {
+        metadata: data?.dataset?.metadata,
+        regression_results: {
+          multiple_regressions: data?.dataset?.metadata?.parameters?.kind === 'none'
+            ? { none: data?.dataset?.regression_results?.multiple_regressions?.none }
+            : data?.dataset?.regression_results?.multiple_regressions
+        }
+      };
 
-      if (!regressionResults) {
+      if (!payload.regression_results.multiple_regressions) {
         throw new Error('No regression results available');
       }
 
-      const result = await getInterpretation(regressionResults);
+      const result = await getInterpretation(payload);
       setInterpretation(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate interpretation');

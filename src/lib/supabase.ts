@@ -9,14 +9,21 @@ if (!supabaseUrl || !supabaseKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-export async function getInterpretation(regressionResults: any): Promise<string> {
+interface InterpretationPayload {
+  metadata: any;
+  regression_results: {
+    multiple_regressions: any;
+  };
+}
+
+export async function getInterpretation(payload: InterpretationPayload): Promise<string> {
   try {
     const response = await fetch('https://energydata.app.n8n.cloud/webhook/17b72dac-f9e1-4f9c-9587-b25b561e93db', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(regressionResults),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
