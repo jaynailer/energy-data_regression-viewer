@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Line } from 'recharts';
 import { useDatasetContext } from '../context/DatasetContext';
 
 export function SimpleRegressionGraph() {
   const { data } = useDatasetContext();
   const [selectedTemp, setSelectedTemp] = useState<string>('');
+  const [equation, setEquation] = useState<string>('');
 
   // Get the first available temperature on component mount
   useEffect(() => {
@@ -18,6 +19,14 @@ export function SimpleRegressionGraph() {
       setSelectedTemp(temps[0]);
     }
   }, [data]);
+
+  // Format temperature for display
+  const formatTemp = (temp: string) => {
+    const match = temp.match(/(hdd|cdd)\((\d+(?:\.\d+)?)\)/i);
+    if (!match) return temp;
+    const [_, kind, baseTemp] = match;
+    return `${kind.toUpperCase()} (${parseFloat(baseTemp)}°C)`;
+  };
 
   const chartData = React.useMemo(() => {
     if (!data?.dataset?.usage_data || !selectedTemp) return [];
@@ -35,6 +44,36 @@ export function SimpleRegressionGraph() {
       }));
   }, [data, selectedTemp]);
 
+  const regressionLineData = React.useMemo(() => {
+    if (!data?.dataset?.regression_results?.simple_regressions?.[selectedTemp]) return [];
+    
+    const results = data.dataset.regression_results.simple_regressions[selectedTemp];
+    if (!results?.coefficients) return [];
+
+    const intercept = results.coefficients[0]?.coef ?? 0;
+    const coefficient = results.coefficients[1]?.coef ?? 0;
+
+    // Update equation
+    setEquation(`Usage = ${intercept.toFixed(2)} ${coefficient >= 0 ? '+' : ''}${coefficient.toFixed(2)} × ${formatTemp(selectedTemp)}`);
+
+    // Create line with points at min and max x values
+    const xValues = chartData.map(point => point.x);
+    const xMin = Math.min(...xValues);
+    const xMax = Math.max(...xValues);
+
+    return [
+      {
+        x: xMin,
+        y: intercept + coefficient * xMin
+      },
+      {
+        x: xMax,
+        y: intercept + coefficient * xMax
+      }
+    ];
+  }, [data, selectedTemp, chartData]);
+
+
   if (!selectedTemp || chartData.length === 0) {
     return (
       <div className="bg-white rounded-[25px] p-6">
@@ -47,6 +86,11 @@ export function SimpleRegressionGraph() {
 
   return (
     <div className="bg-white rounded-[25px] p-6">
+      {equation && (
+        <div className="mb-4 text-sm text-[#2C5265] font-mono">
+          {equation}
+        </div>
+      )}
       <div className="h-[500px]">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 20, right: 20, bottom: 50, left: 60 }}>
@@ -55,7 +99,7 @@ export function SimpleRegressionGraph() {
               type="number"
               dataKey="x"
               name={selectedTemp}
-              label={{ 
+              label={{
                 value: selectedTemp.toUpperCase(), 
                 position: 'bottom', 
                 offset: 20 
@@ -64,7 +108,7 @@ export function SimpleRegressionGraph() {
             <YAxis
               type="number"
               dataKey="y"
-              name="Usage"
+              name="Usage" 
               label={{ 
                 value: 'Usage', 
                 angle: -90, 
@@ -72,10 +116,36 @@ export function SimpleRegressionGraph() {
                 offset: -40 
               }}
             />
+            <Tooltip
+              cursor={{ strokeDasharray: '3 3' }}
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const data = payload[0].payload;
+                return (
+                  <div className="bg-white p-2 border border-gray-200 rounded shadow">
+                    <p className="text-sm text-[#2C5265]">
+                      {formatTemp(selectedTemp)}: {data.x.toFixed(2)}
+                    </p>
+                    <p className="text-sm text-[#2C5265]">
+                      Usage: {data.y.toFixed(2)}
+                    </p>
+                  </div>
+                );
+              }}
+            />
             <Scatter
               data={chartData}
               fill="#2C5265"
-              shape="circle"
+              shape="circle" 
+            />
+            <Line
+              data={regressionLineData}
+              type="linear"
+              dataKey="y"
+              stroke="#AD435A"
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
             />
           </ScatterChart>
         </ResponsiveContainer>
