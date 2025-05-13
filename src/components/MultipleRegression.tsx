@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Network, SwitchCamera } from 'lucide-react';
-import * as THREE from 'three';
+import { ComposedChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line } from 'recharts';
 import { useDatasetContext } from '../context/DatasetContext';
 import { useRegressionType } from '../context/RegressionTypeContext';
 
@@ -26,240 +26,65 @@ export function MultipleRegression() {
 
   // Format equation for display
   const formatEquation = (results: any) => {
-    if (!results?.coefficients || results.coefficients.length < 3) return 'N/A';
+    if (!results?.coefficients) return 'N/A';
     
     const coefficients = results.coefficients;
     const intercept = coefficients[0]?.coef ?? 0;
     const degreeDay = coefficients[1]?.coef ?? 0;
-    const predictor = coefficients[2]?.coef ?? 0;
     const degreeDayVar = coefficients[1]?.variable ?? 'DD';
     const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
     
-    return `Usage = ${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
+    if (showSimple) {
+      return `Usage = ${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar}`;
+    } else {
+      const predictor = coefficients[2]?.coef ?? 0;
+      return `Usage = ${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
+    }
+  };
+
+  const prepareChartData = () => {
+    if (!data?.dataset?.usage_data || !selectedTemp) return [];
+
+    return data.dataset.usage_data.map(entry => ({
+      x: showSimple ? entry[selectedTemp] : entry.predictor_1,
+      y: entry.usage,
+      z: !showSimple ? entry[selectedTemp] : undefined
+    }));
+  };
+
+  const getRegressionLineData = () => {
+    const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
+    const results = showSimple 
+      ? data?.dataset?.regression_results?.simple_regressions?.[selectedTemp]
+      : data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`];
+
+    if (!results?.coefficients) return [];
+
+    const points = prepareChartData();
+    const xValues = points.map(p => p.x);
+    const xMin = Math.min(...xValues);
+    const xMax = Math.max(...xValues);
+    
+    const intercept = results.coefficients[0]?.coef ?? 0;
+    const coefficient = results.coefficients[1]?.coef ?? 0;
+    
+    return [
+      { x: xMin, y: intercept + coefficient * xMin },
+      { x: xMax, y: intercept + coefficient * xMax }
+    ];
   };
 
   useEffect(() => {
     if (!containerRef.current || !data?.dataset?.usage_data || !selectedTemp) return;
 
-    // Get data points and filter out invalid values
-    const validPoints = data.dataset.usage_data
-      .filter(entry => 
-        typeof entry[selectedTemp] === 'number' && 
-        !isNaN(entry[selectedTemp]) &&
-        typeof entry.usage === 'number' && 
-        !isNaN(entry.usage) &&
-        typeof entry.predictor_1 === 'number' && 
-        !isNaN(entry.predictor_1)
-      )
-      .map(entry => ({
-        x: entry[selectedTemp],
-        y: entry.usage,
-        z: entry.predictor_1 || 0
-      }));
+  }, [data, selectedTemp, showSimple]);
 
-    if (validPoints.length === 0) {
-      console.warn('No valid data points found');
-      return;
-    }
-
-    // Set up scene
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffffff);
-
-    // Set up camera
-    const camera = new THREE.PerspectiveCamera(75, containerRef.current.clientWidth / containerRef.current.clientHeight, 0.1, 1000);
-    camera.position.set(2, 2, 2);
-    camera.lookAt(0, 0, 0);
-
-    // Set up renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-    containerRef.current.innerHTML = '';
-    containerRef.current.appendChild(renderer.domElement);
-
-    // Set up orbit controls for better interaction
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-
-    // Create axes
-    const axesHelper = new THREE.AxesHelper(1);
-    scene.add(axesHelper);
-
-    // Normalize data points with safety checks
-    const xValues = validPoints.map(p => p.x);
-    const yValues = validPoints.map(p => p.y);
-    const zValues = validPoints.map(p => p.z);
-
-    const xMin = Math.min(...xValues);
-    const xMax = Math.max(...xValues);
-    const yMin = Math.min(...yValues);
-    const yMax = Math.max(...yValues);
-    const zMin = Math.min(...zValues);
-    const zMax = Math.max(...zValues);
-
-    // Create scatter plot points
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(validPoints.length * 3);
-
-    validPoints.forEach((point, i) => {
-      // Normalize coordinates to [-1, 1] range with safety checks
-      const x = xMax === xMin ? 0 : ((point.x - xMin) / (xMax - xMin)) * 2 - 1;
-      const y = yMax === yMin ? 0 : ((point.y - yMin) / (yMax - yMin)) * 2 - 1;
-      const z = zMax === zMin ? 0 : ((point.z - zMin) / (zMax - zMin)) * 2 - 1;
-
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = z;
-      positions[i * 3 + 2] = y;
-    });
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-    const pointsMaterial = new THREE.PointsMaterial({
-      size: 0.03,
-      color: 0xAD435A,
-      sizeAttenuation: true
-    });
-
-    const pointCloud = new THREE.Points(geometry, pointsMaterial);
-    scene.add(pointCloud);
-
-    // Create regression surface
-    const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
-    const multipleResults = data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`] || 
-                           data?.dataset?.regression_results?.multiple_regressions?.none;
-
-    if (multipleResults?.coefficients) {
-      const intercept = multipleResults.coefficients[0]?.coef ?? 0;
-      const coef1 = multipleResults.coefficients[1]?.coef ?? 0;
-      const coef2 = multipleResults.coefficients[2]?.coef ?? 0;
-
-      // Create surface geometry
-      const surfaceGeometry = new THREE.PlaneGeometry(2, 2, 20, 20);
-      const vertices = surfaceGeometry.attributes.position.array;
-
-      // Update vertices to create the regression surface
-      for (let i = 0; i < vertices.length; i += 3) {
-        const x = vertices[i];
-        const z = vertices[i + 1];
-        
-        // Convert normalized coordinates back to original scale
-        const originalX = x * (xMax - xMin) / 2 + (xMax + xMin) / 2;
-        const originalZ = z * (zMax - zMin) / 2 + (zMax + zMin) / 2;
-        
-        // Calculate predicted y using regression equation
-        const predictedY = intercept + coef1 * originalX + coef2 * originalZ;
-        
-        // Normalize predicted y back to [-1, 1] range
-        vertices[i + 2] = (predictedY - yMin) / (yMax - yMin) * 2 - 1;
-      }
-
-      surfaceGeometry.attributes.position.needsUpdate = true;
-      surfaceGeometry.computeVertexNormals();
-
-      const surfaceMaterial = new THREE.MeshPhongMaterial({
-        color: 0x2C5265,
-        opacity: 0.6,
-        transparent: true,
-        side: THREE.DoubleSide,
-        wireframe: true
-      });
-
-      const surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
-      scene.add(surface);
-
-      // Add lighting for better surface visibility
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-      scene.add(ambientLight);
-
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-      directionalLight.position.set(1, 1, 1);
-      scene.add(directionalLight);
-    }
-
-    // Add axis labels
-    const createLabel = (text: string, position: THREE.Vector3) => {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d')!;
-      canvas.width = 128;
-      canvas.height = 32;
-
-      context.fillStyle = '#2C5265';
-      context.font = '24px Arial';
-      context.fillText(text, 0, 24);
-
-      const texture = new THREE.CanvasTexture(canvas);
-      const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-      const sprite = new THREE.Sprite(spriteMaterial);
-      sprite.position.copy(position);
-      sprite.scale.set(0.5, 0.125, 1);
-      return sprite;
-    };
-
-    scene.add(createLabel(selectedTemp, new THREE.Vector3(1.2, 0, 0)));
-    scene.add(createLabel('Usage', new THREE.Vector3(0, 1.2, 0)));
-    scene.add(createLabel(predictorName, new THREE.Vector3(0, 0, 1.2)));
-
-    // Add equation to the scene
-    const equation = formatEquation(multipleResults);
-    const createEquationLabel = () => {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d')!;
-      canvas.width = 512;
-      canvas.height = 64;
-
-      // Draw background
-      context.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      context.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw text
-      context.fillStyle = '#2C5265';
-      context.font = 'bold 24px Arial';
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.fillText(equation, canvas.width / 2, canvas.height / 2);
-
-      const texture = new THREE.CanvasTexture(canvas);
-      const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-      const sprite = new THREE.Sprite(spriteMaterial);
-      sprite.position.set(0, 1.5, 0);
-      sprite.scale.set(1, 0.25, 1);
-      return sprite;
-    };
-
-    scene.add(createEquationLabel());
-
-    // Animation
-    let frameId: number;
-    const animate = () => {
-      frameId = requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    // Handle window resize
-    const handleResize = () => {
-      if (!containerRef.current) return;
-      
-      const width = containerRef.current.clientWidth;
-      const height = containerRef.current.clientHeight;
-
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    };
-    window.addEventListener('resize', handleResize);
-
-    // Cleanup
-    return () => {
-      cancelAnimationFrame(frameId);
-      window.removeEventListener('resize', handleResize);
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
-      }
-    };
-  }, [data, selectedTemp]);
+  const chartData = prepareChartData();
+  const lineData = getRegressionLineData();
+  const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
+  const results = showSimple 
+    ? data?.dataset?.regression_results?.simple_regressions?.[selectedTemp]
+    : data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`];
 
   return (
     <div className="bg-[#f5f7f5] rounded-[25px] p-6 shadow-lg">
@@ -298,9 +123,77 @@ export function MultipleRegression() {
       
       <div className="space-y-4">
         <div 
-          ref={containerRef} 
-          className="h-[500px] bg-white rounded-[25px] overflow-hidden"
-        />
+          className="bg-white rounded-[25px] p-4"
+        >
+          {results && (
+            <div className="mb-4 text-sm text-[#2C5265]">
+              <p>{formatEquation(results)}</p>
+              <p>R² = {results.model_summary?.r_squared.toFixed(3) || 'N/A'}</p>
+            </div>
+          )}
+          <div className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart margin={{ top: 20, right: 20, bottom: 50, left: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis
+                  type="number"
+                  dataKey="x"
+                  name={showSimple ? selectedTemp : predictorName}
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(value) => value.toLocaleString()}
+                  label={{ value: showSimple ? selectedTemp : predictorName, position: 'bottom', offset: 20 }}
+                />
+                <YAxis
+                  type="number"
+                  dataKey="y"
+                  name="Usage"
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(value) => value.toLocaleString()}
+                  label={{ value: 'Usage', angle: -90, position: 'insideLeft', offset: -20 }}
+                />
+                <Tooltip
+                  cursor={{ strokeDasharray: '3 3' }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-white p-2 border border-gray-200 rounded shadow">
+                        <p className="text-sm text-[#2C5265]">
+                          {showSimple ? selectedTemp : predictorName}: {data.x.toFixed(2)}
+                        </p>
+                        <p className="text-sm text-[#2C5265]">
+                          Usage: {data.y.toFixed(2)}
+                        </p>
+                        {!showSimple && data.z !== undefined && (
+                          <p className="text-sm text-[#2C5265]">
+                            {selectedTemp}: {data.z.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  }}
+                />
+                <Scatter 
+                  name="Data Points"
+                  data={chartData}
+                  fill="#2C5265"
+                />
+                {lineData.length > 0 && (
+                  <Line
+                    type="linear"
+                    dataKey="y"
+                    data={lineData}
+                    stroke="#AD435A"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={false}
+                    isAnimationActive={false}
+                  />
+                )}
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
     </div>
   );
