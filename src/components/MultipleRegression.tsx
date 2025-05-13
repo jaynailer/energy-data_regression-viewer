@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Network, SwitchCamera } from 'lucide-react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Line } from 'recharts';
 import { useDatasetContext } from '../context/DatasetContext';
 import { useRegressionType } from '../context/RegressionTypeContext';
 
@@ -156,25 +156,19 @@ export function MultipleRegression() {
       
       <div className="space-y-4">
         <div 
-          className="bg-white rounded-[25px] p-4 overflow-hidden"
+          className="bg-white rounded-[25px] p-6 overflow-hidden"
         >
-          {results && (
-            <div className="mb-4 text-sm text-[#2C5265]">
-              <p>{formatEquation(results)}</p>
-              <p>R² = {results.model_summary?.r_squared.toFixed(3) || 'N/A'}</p>
-            </div>
-          )}
-          <div className="h-[400px]">
+          <div className="h-[500px]">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 20, right: 20, bottom: 50, left: 60 }}>
-                <CartesianGrid stroke="#E5E7EB" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis
                   type="number"
                   dataKey="x"
                   name={formatTemp(selectedTemp)}
                   tick={{ fontSize: 11 }}
                   tickFormatter={(value) => value.toLocaleString()}
-                  label={{ value: formatTemp(selectedTemp), position: 'bottom', offset: 20 }}
+                  label={{ value: selectedTemp, position: 'bottom', offset: 20 }}
                 />
                 <YAxis
                   type="number"
@@ -182,35 +176,12 @@ export function MultipleRegression() {
                   name="Usage"
                   tick={{ fontSize: 11 }}
                   tickFormatter={(value) => value.toLocaleString()}
-                  label={{ value: 'Usage', angle: -90, position: 'insideLeft', offset: -20 }}
-                />
-                <Tooltip
-                  cursor={{ strokeDasharray: '3 3' }}
-                  content={({ active, payload }) => {
-                    if (!active || !payload?.length) return null;
-                    const data = payload[0].payload;
-                    return (
-                      <div className="bg-white p-2 border border-gray-200 rounded shadow">
-                        <p className="text-sm text-[#2C5265]">
-                          {selectedTemp}: {data.x.toFixed(2)}
-                        </p>
-                        <p className="text-sm text-[#2C5265]">
-                          Usage: {data.y.toFixed(2)}
-                        </p>
-                        {!showSimple && (
-                          <p className="text-sm text-[#2C5265]">
-                            {predictorName}: {data.z.toFixed(2)}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  }}
+                  label={{ value: 'Usage', angle: -90, position: 'insideLeft', offset: -40 }}
                 />
                 <Scatter 
                   name="Data Points"
                   data={chartData}
-                  fill={showSimple ? "#2C5265" : "#AD435A"}
-                  fillOpacity={0.7}
+                  fill="#2C5265"
                   shape="circle"
                   legendType="none"
                 />
@@ -219,7 +190,7 @@ export function MultipleRegression() {
                     type="linear"
                     dataKey="y"
                     data={lineData}
-                    stroke={showSimple ? "#AD435A" : "#2C5265"}
+                    stroke="#AD435A"
                     strokeWidth={2}
                     dot={false}
                     activeDot={false}
