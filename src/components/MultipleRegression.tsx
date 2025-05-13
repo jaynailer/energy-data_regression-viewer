@@ -147,7 +147,6 @@ export function MultipleRegression() {
     scene.add(createLabel(predictorName, new THREE.Vector3(0, 0, 1.2)));
 
     // Add equation to the scene
-    const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
     const multipleResults = data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`] || data?.dataset?.regression_results?.multiple_regressions?.none;
     const equation = formatEquation(multipleResults);
     const createEquationLabel = () => {
