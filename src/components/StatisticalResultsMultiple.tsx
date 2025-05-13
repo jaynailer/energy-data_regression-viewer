@@ -124,10 +124,11 @@ export function StatisticalResultsMultiple() {
     
     const intercept = results.coefficients[0]?.coef ?? 0;
     const degreeDay = results.coefficients[1]?.coef ?? 0;
-    const degreeDayVar = results.coefficients[1]?.variable ?? 'Degree Days';
+    const degreeDayVar = results.coefficients[1]?.variable ?? '';
     
     if (showSimple) {
-      return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar}`;
+      const isDegreeDays = degreeDayVar.match(/(hdd|cdd)/i);
+      return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${isDegreeDays ? degreeDayVar : predictorName}`;
     } else {
       const predictor = results.coefficients[2]?.coef ?? 0;
       return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
