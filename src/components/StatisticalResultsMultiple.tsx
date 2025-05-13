@@ -218,5 +218,3 @@ export function StatisticalResultsMultiple() {
     </div>
   );
 }
-
-export { StatisticalResultsMultiple }
