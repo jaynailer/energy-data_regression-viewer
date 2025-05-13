@@ -242,3 +242,5 @@ export default function MultipleRegression() {
     </div>
   );
 }
+
+export { MultipleRegression }
