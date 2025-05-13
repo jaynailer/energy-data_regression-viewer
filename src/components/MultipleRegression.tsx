@@ -19,6 +19,9 @@ export function MultipleRegression() {
     return temps[0] || '';
   });
 
+  // Move predictorName declaration here, before it's used
+  const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
+
   // Extract unique base temperatures from the data
   const baseTemps = data?.dataset?.usage_data?.[0] 
     ? Object.keys(data.dataset.usage_data[0])
@@ -43,7 +46,6 @@ export function MultipleRegression() {
     const intercept = coefficients[0]?.coef ?? 0;
     const degreeDay = coefficients[1]?.coef ?? 0;
     const degreeDayVar = coefficients[1]?.variable ?? 'DD';
-    const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
     
     if (showSimple) {
       return `Usage = ${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar}`;
@@ -112,7 +114,6 @@ export function MultipleRegression() {
 
   const chartData = prepareChartData();
   const lineData = getRegressionLineData();
-  const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
   const regressionKey = showSimple ? 'simple_regressions' : 'multiple_regressions';
   const results = showSimple 
     ? data?.dataset?.regression_results?.[regressionKey]?.[selectedTemp]
