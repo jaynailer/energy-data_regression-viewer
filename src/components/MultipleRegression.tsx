@@ -45,15 +45,18 @@ export function MultipleRegression() {
   const prepareChartData = () => {
     if (!data?.dataset?.usage_data || !selectedTemp) return [];
 
-    return data.dataset.usage_data
+    const points = data.dataset.usage_data
       .filter(entry => 
         typeof entry[selectedTemp] === 'number' && 
         !isNaN(entry[selectedTemp]) &&
         typeof entry.usage === 'number' && 
         !isNaN(entry.usage) &&
         (!showSimple ? typeof entry.predictor_1 === 'number' && !isNaN(entry.predictor_1) : true)
-      )
-      .map(entry => ({
+      );
+
+    if (points.length === 0) return [];
+
+    return points.map(entry => ({
         x: showSimple ? entry[selectedTemp] : entry.predictor_1,
         y: entry.usage,
         z: !showSimple ? entry[selectedTemp] : undefined
@@ -71,23 +74,28 @@ export function MultipleRegression() {
     const points = prepareChartData();
     if (points.length === 0) return [];
 
-    const xValues = points.map(p => p.x);
-    const xMin = Math.min(...xValues);
-    const xMax = Math.max(...xValues);
+    // Get min/max values for x axis
+    const xMin = Math.min(...points.map(p => p.x));
+    const xMax = Math.max(...points.map(p => p.x));
     
     const intercept = results.coefficients[0]?.coef ?? 0;
     const coefficient = results.coefficients[1]?.coef ?? 0;
     const predictor = !showSimple ? results.coefficients[2]?.coef ?? 0 : 0;
     
-    // Create line points
+    // Create more points for a smoother line
     const numPoints = 100;
     const step = (xMax - xMin) / (numPoints - 1);
     
+    // For multiple regression, we need the average temperature
+    const avgTemp = !showSimple 
+      ? points.reduce((sum, p) => sum + (p.z || 0), 0) / points.length
+      : 0;
+
     return Array.from({ length: numPoints }, (_, i) => {
       const x = xMin + step * i;
       const y = showSimple
         ? intercept + coefficient * x
-        : intercept + coefficient * points[0].z + predictor * x;
+        : intercept + coefficient * avgTemp + predictor * x;
       return { x, y };
     });
   };
@@ -189,15 +197,16 @@ export function MultipleRegression() {
                 <Scatter 
                   name="Data Points"
                   data={chartData}
-                  fill={showSimple ? "#2C5265" : "#AD435A"}
-                  opacity={0.6}
+                  fill="#2C5265"
+                  opacity={0.5}
+                  r={4}
                 />
                 {lineData.length > 0 && (
                   <Line
                     type="linear"
                     dataKey="y"
                     data={lineData}
-                    stroke="#2C5265"
+                    stroke="#AD435A"
                     strokeWidth={2}
                     dot={false}
                     activeDot={false}
