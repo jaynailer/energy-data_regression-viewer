@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Line } from 'recharts';
+import { LineChart } from 'lucide-react';
 import { useDatasetContext } from '../context/DatasetContext';
 
 export function SimpleRegressionGraph() {
@@ -85,14 +86,40 @@ export function SimpleRegressionGraph() {
   }
 
   return (
-    <div className="bg-white rounded-[25px] p-6">
-      {equation && (
-        <div className="mb-4 text-sm text-[#2C5265] font-mono">
-          {equation}
+    <div className="bg-[#f5f7f5] rounded-[25px] p-6 shadow-lg">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <LineChart className="w-6 h-6 text-[#2C5265]" />
+          <h2 className="text-2xl font-bold text-[#2C5265]">Simple Regression</h2>
         </div>
-      )}
-      <div className="h-[500px]">
-        <ResponsiveContainer width="100%" height="100%">
+        <div className="flex gap-2">
+          {Object.keys(data?.dataset?.usage_data?.[0] || {})
+            .filter(key => key.match(/^(cdd|hdd)\(\d+(?:\.\d+)?\)$/i))
+            .sort()
+            .map(temp => (
+              <button
+                key={temp}
+                onClick={() => setSelectedTemp(temp)}
+                className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                  selectedTemp === temp
+                    ? 'bg-[#2C5265] text-white'
+                    : 'bg-white text-[#2C5265] hover:bg-[#2C5265]/10'
+                }`}
+              >
+                {formatTemp(temp)}
+              </button>
+            ))}
+        </div>
+      </div>
+      
+      <div className="bg-white rounded-[25px] p-6">
+        {equation && (
+          <div className="mb-4 text-sm text-[#2C5265] font-mono">
+            {equation}
+          </div>
+        )}
+        <div className="h-[500px]">
+          <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 20, right: 20, bottom: 50, left: 60 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
             <XAxis
@@ -148,7 +175,8 @@ export function SimpleRegressionGraph() {
               isAnimationActive={false}
             />
           </ScatterChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
