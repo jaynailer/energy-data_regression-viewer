@@ -26,10 +26,11 @@ export function MultipleRegression() {
   const formatEquation = (results: any) => {
     if (!results?.coefficients || results.coefficients.length < 3) return 'N/A';
     
-    const intercept = results.coefficients[0]?.coef ?? 0;
-    const degreeDay = results.coefficients[1]?.coef ?? 0;
-    const predictor = results.coefficients[2]?.coef ?? 0;
-    const degreeDayVar = results.coefficients[1]?.variable ?? 'DD';
+    const coefficients = results.coefficients;
+    const intercept = coefficients[0]?.coef ?? 0;
+    const degreeDay = coefficients[1]?.coef ?? 0;
+    const predictor = coefficients[2]?.coef ?? 0;
+    const degreeDayVar = coefficients[1]?.variable ?? 'DD';
     const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
     
     return `Usage = ${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
@@ -146,7 +147,8 @@ export function MultipleRegression() {
     scene.add(createLabel(predictorName, new THREE.Vector3(0, 0, 1.2)));
 
     // Add equation to the scene
-    const equation = formatEquation(data?.dataset?.regression_results?.[selectedTemp]);
+    const multipleResults = data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_predictor1`];
+    const equation = formatEquation(multipleResults);
     const createEquationLabel = () => {
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d')!;

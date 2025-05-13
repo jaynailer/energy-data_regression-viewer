@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, HelpCircle } from 'lucide-react';
+import { BarChart3, HelpCircle, SwitchCamera } from 'lucide-react';
 import { useDatasetContext } from '../context/DatasetContext';
 
 interface TooltipProps {
@@ -24,11 +24,17 @@ function Tooltip({ title, description, guidance }: TooltipProps) {
 
 export function StatisticalResultsMultiple() {
   const { data } = useDatasetContext();
+  const [showSimple, setShowSimple] = React.useState(false);
 
   const kind = data?.dataset?.metadata?.parameters?.kind;
-  const regressionResults = kind === 'none' 
+  const multipleResults = kind === 'none'
+    ? { none: data?.dataset?.regression_results?.multiple_regressions?.none }
+    : (data?.dataset?.regression_results?.multiple_regressions || {});
+  const simpleResults = kind === 'none'
     ? { none: data?.dataset?.regression_results?.simple_regressions?.none }
     : (data?.dataset?.regression_results?.simple_regressions || {});
+  
+  const regressionResults = showSimple ? simpleResults : multipleResults;
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
 
   const formatEquation = (results: any) => {
@@ -46,7 +52,18 @@ export function StatisticalResultsMultiple() {
     <div className="bg-[#f5f7f5] rounded-[25px] p-6 shadow-lg">
       <div className="flex items-center gap-3 mb-4">
         <BarChart3 className="w-6 h-6 text-[#2C5265]" />
-        <h2 className="text-2xl font-bold text-[#2C5265]">Multiple Regression Results</h2>
+        <div className="flex items-center justify-between w-full">
+          <h2 className="text-2xl font-bold text-[#2C5265]">
+            {showSimple ? 'Simple' : 'Multiple'} Regression Results
+          </h2>
+          <button
+            onClick={() => setShowSimple(!showSimple)}
+            className="flex items-center gap-2 px-4 py-2 bg-white rounded-full text-[#2C5265] hover:bg-[#2C5265]/10 transition-colors"
+          >
+            <SwitchCamera className="w-4 h-4" />
+            <span>Switch to {showSimple ? 'Multiple' : 'Simple'} Regression</span>
+          </button>
+        </div>
       </div>
       <div className="space-y-4">
         <div className="bg-white rounded-[25px] p-4 overflow-x-auto">
