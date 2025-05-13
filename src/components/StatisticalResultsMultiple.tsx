@@ -27,8 +27,8 @@ export function StatisticalResultsMultiple() {
 
   const kind = data?.dataset?.metadata?.parameters?.kind;
   const regressionResults = kind === 'none' 
-    ? { none: data?.dataset?.regression_results?.none }
-    : (data?.dataset?.regression_results || {});
+    ? { none: data?.dataset?.regression_results?.simple_regressions?.none }
+    : (data?.dataset?.regression_results?.simple_regressions || {});
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
 
   const formatEquation = (results: any) => {
