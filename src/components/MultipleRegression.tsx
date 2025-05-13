@@ -66,6 +66,11 @@ export function MultipleRegression() {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xffffff);
 
+    // Set up orbit controls for better interaction
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
     // Set up camera
     const camera = new THREE.PerspectiveCamera(75, containerRef.current.clientWidth / containerRef.current.clientHeight, 0.1, 1000);
     camera.position.set(2, 2, 2);
@@ -93,10 +98,9 @@ export function MultipleRegression() {
     const zMin = Math.min(...zValues);
     const zMax = Math.max(...zValues);
 
-    // Create points geometry
+    // Create scatter plot points
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(validPoints.length * 3);
-    const colors = new Float32Array(validPoints.length * 3);
 
     validPoints.forEach((point, i) => {
       // Normalize coordinates to [-1, 1] range with safety checks
@@ -105,24 +109,73 @@ export function MultipleRegression() {
       const z = zMax === zMin ? 0 : ((point.z - zMin) / (zMax - zMin)) * 2 - 1;
 
       positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-
-      colors[i * 3] = 0.7;
-      colors[i * 3 + 1] = 0.2;
-      colors[i * 3 + 2] = 0.3;
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = z;
+      positions[i * 3 + 2] = y;
     });
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    const material = new THREE.PointsMaterial({
-      size: 0.02,
-      vertexColors: true
+    const pointsMaterial = new THREE.PointsMaterial({
+      size: 0.03,
+      color: 0xAD435A,
+      sizeAttenuation: true
     });
 
-    const pointCloud = new THREE.Points(geometry, material);
+    const pointCloud = new THREE.Points(geometry, pointsMaterial);
     scene.add(pointCloud);
+
+    // Create regression surface
+    const multipleResults = data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`] || 
+                           data?.dataset?.regression_results?.multiple_regressions?.none;
+
+    if (multipleResults?.coefficients) {
+      const intercept = multipleResults.coefficients[0]?.coef ?? 0;
+      const coef1 = multipleResults.coefficients[1]?.coef ?? 0;
+      const coef2 = multipleResults.coefficients[2]?.coef ?? 0;
+
+      // Create surface geometry
+      const surfaceGeometry = new THREE.PlaneGeometry(2, 2, 20, 20);
+      const vertices = surfaceGeometry.attributes.position.array;
+
+      // Update vertices to create the regression surface
+      for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const z = vertices[i + 1];
+        
+        // Convert normalized coordinates back to original scale
+        const originalX = x * (xMax - xMin) / 2 + (xMax + xMin) / 2;
+        const originalZ = z * (zMax - zMin) / 2 + (zMax + zMin) / 2;
+        
+        // Calculate predicted y using regression equation
+        const predictedY = intercept + coef1 * originalX + coef2 * originalZ;
+        
+        // Normalize predicted y back to [-1, 1] range
+        vertices[i + 2] = (predictedY - yMin) / (yMax - yMin) * 2 - 1;
+      }
+
+      surfaceGeometry.attributes.position.needsUpdate = true;
+      surfaceGeometry.computeVertexNormals();
+
+      const surfaceMaterial = new THREE.MeshPhongMaterial({
+        color: 0x2C5265,
+        opacity: 0.6,
+        transparent: true,
+        side: THREE.DoubleSide,
+        wireframe: true
+      });
+
+      const surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
+      scene.add(surface);
+
+      // Add lighting for better surface visibility
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      directionalLight.position.set(1, 1, 1);
+      scene.add(directionalLight);
+    }
 
     // Add axis labels
     const createLabel = (text: string, position: THREE.Vector3) => {
@@ -182,7 +235,7 @@ export function MultipleRegression() {
     let frameId: number;
     const animate = () => {
       frameId = requestAnimationFrame(animate);
-      scene.rotation.y += 0.001;
+      controls.update();
       renderer.render(scene, camera);
     };
     animate();
