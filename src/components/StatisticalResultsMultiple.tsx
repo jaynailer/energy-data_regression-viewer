@@ -37,6 +37,81 @@ export function StatisticalResultsMultiple() {
   const regressionResults = showSimple ? simpleResults : multipleResults;
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
 
+  // Format table rows based on regression type
+  const getTableRows = () => {
+    const commonRows = [
+      {
+        title: "Equation",
+        description: "The formula that predicts energy usage based on degree days and predictor variables.",
+        guidance: "Check if coefficients have expected signs and reasonable magnitudes.",
+        getValue: (result: any) => formatEquation(result)
+      },
+      {
+        title: "R²",
+        description: "The proportion of variance in the dependent variable explained by the model.",
+        guidance: "Higher values indicate better fit (range: 0 to 1).",
+        getValue: (result: any) => !isNaN(result?.model_summary?.r_squared) ? result.model_summary.r_squared.toFixed(3) : 'N/A'
+      },
+      {
+        title: "Adjusted R²",
+        description: "R² adjusted for the number of predictors in the model.",
+        guidance: "Prefer this over R² when comparing models with different numbers of predictors.",
+        getValue: (result: any) => !isNaN(result?.model_summary?.adj_r_squared) ? result.model_summary.adj_r_squared.toFixed(3) : 'N/A'
+      }
+    ];
+
+    const pValueRow = showSimple ? {
+      title: "p-value",
+      description: "Statistical significance of the coefficient.",
+      guidance: "Values below 0.05 indicate statistical significance.",
+      getValue: (result: any) => !isNaN(result?.coefficients?.[1]?.p_value) ? result.coefficients[1].p_value.toFixed(6) : 'N/A'
+    } : [
+      {
+        title: "p-value (Degree Days)",
+        description: "Statistical significance of the degree days coefficient.",
+        guidance: "Values below 0.05 indicate statistical significance.",
+        getValue: (result: any) => !isNaN(result?.coefficients?.[1]?.p_value) ? result.coefficients[1].p_value.toFixed(6) : 'N/A'
+      },
+      {
+        title: `p-value (${predictorName})`,
+        description: `Statistical significance of the ${predictorName} coefficient.`,
+        guidance: "Values below 0.05 indicate statistical significance.",
+        getValue: (result: any) => !isNaN(result?.coefficients?.[2]?.p_value) ? result.coefficients[2].p_value.toFixed(6) : 'N/A'
+      }
+    ];
+
+    const remainingRows = [
+      {
+        title: "F-statistic",
+        description: "Tests the overall significance of the regression model.",
+        guidance: "Higher values indicate a stronger relationship between predictors and the dependent variable.",
+        getValue: (result: any) => !isNaN(result?.model_summary?.f_statistic) ? result.model_summary.f_statistic.toFixed(2) : 'N/A'
+      },
+      {
+        title: "p-value (F-statistic)",
+        description: "Statistical significance of the overall model.",
+        guidance: "Values below 0.05 indicate the model is statistically significant.",
+        getValue: (result: any) => result?.model_summary?.prob_f_statistic === 'nan' ? 'N/A' : 
+          typeof result?.model_summary?.prob_f_statistic === 'number' ? 
+          result.model_summary.prob_f_statistic.toFixed(6) : 'N/A'
+      },
+      {
+        title: "Condition Number",
+        description: "Measures the numerical stability of the model.",
+        guidance: "Lower values indicate better stability. Values above 30 suggest potential issues.",
+        getValue: (result: any) => !isNaN(result?.diagnostics?.condition_number) ? result.diagnostics.condition_number.toFixed(2) : 'N/A'
+      },
+      {
+        title: "Observations",
+        description: "Number of data points used in the analysis.",
+        guidance: "More observations generally lead to more reliable results.",
+        getValue: (result: any) => result?.model_summary?.observations || 'N/A'
+      }
+    ];
+
+    return [...commonRows, ...(Array.isArray(pValueRow) ? pValueRow : [pValueRow]), ...remainingRows];
+  };
+
   const formatEquation = (results: any) => {
     if (!results?.coefficients) return 'N/A';
     
@@ -83,134 +158,22 @@ export function StatisticalResultsMultiple() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              <tr>
-                <td className="py-2 px-4">
-                  <Tooltip 
-                    title="Equation"
-                    description="The formula that predicts energy usage based on degree days and predictor variables."
-                    guidance="Check if coefficients have expected signs and reasonable magnitudes."
-                  />
-                </td>
-                {Object.values(regressionResults).map((result, index) => (
-                  <td key={index} className="py-2 px-4 font-mono text-sm">
-                    {formatEquation(result)}
+              {getTableRows().map((row, rowIndex) => (
+                <tr key={row.title} className={rowIndex % 2 === 1 ? 'bg-gray-50' : ''}>
+                  <td className="py-2 px-4">
+                    <Tooltip 
+                      title={row.title}
+                      description={row.description}
+                      guidance={row.guidance}
+                    />
                   </td>
-                ))}
-              </tr>
-              <tr className="bg-gray-50">
-                <td className="py-2 px-4">
-                  <Tooltip 
-                    title="R²"
-                    description="The proportion of variance in the dependent variable explained by the model."
-                    guidance="Higher values indicate better fit (range: 0 to 1)."
-                  />
-                </td>
-                {Object.values(regressionResults).map((result, index) => (
-                  <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.model_summary?.r_squared) ? result.model_summary.r_squared.toFixed(3) : 'N/A'}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="py-2 px-4">
-                  <Tooltip 
-                    title="Adjusted R²"
-                    description="R² adjusted for the number of predictors in the model."
-                    guidance="Prefer this over R² when comparing models with different numbers of predictors."
-                  />
-                </td>
-                {Object.values(regressionResults).map((result, index) => (
-                  <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.model_summary?.adj_r_squared) ? result.model_summary.adj_r_squared.toFixed(3) : 'N/A'}
-                  </td>
-                ))}
-              </tr>
-              <tr className="bg-gray-50">
-                <td className="py-2 px-4">
-                  <Tooltip 
-                    title="p-value (Degree Days)"
-                    description="Statistical significance of the degree days coefficient."
-                    guidance="Values below 0.05 indicate statistical significance."
-                  />
-                </td>
-                {Object.values(regressionResults).map((result, index) => (
-                  <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.coefficients?.[1]?.p_value) ? result.coefficients[1].p_value.toFixed(6) : 'N/A'}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="py-2 px-4">
-                  <Tooltip 
-                    title={`p-value (${predictorName})`}
-                    description={`Statistical significance of the ${predictorName} coefficient.`}
-                    guidance="Values below 0.05 indicate statistical significance."
-                  />
-                </td>
-                {Object.values(regressionResults).map((result, index) => (
-                  <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.coefficients?.[2]?.p_value) ? result.coefficients[2].p_value.toFixed(6) : 'N/A'}
-                  </td>
-                ))}
-              </tr>
-              <tr className="bg-gray-50">
-                <td className="py-2 px-4">
-                  <Tooltip 
-                    title="F-statistic"
-                    description="Tests the overall significance of the regression model."
-                    guidance="Higher values indicate a stronger relationship between predictors and the dependent variable."
-                  />
-                </td>
-                {Object.values(regressionResults).map((result, index) => (
-                  <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.model_summary?.f_statistic) ? result.model_summary.f_statistic.toFixed(2) : 'N/A'}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="py-2 px-4">
-                  <Tooltip 
-                    title="p-value (F-statistic)"
-                    description="Statistical significance of the overall model."
-                    guidance="Values below 0.05 indicate the model is statistically significant."
-                  />
-                </td>
-                {Object.values(regressionResults).map((result, index) => (
-                  <td key={index} className="py-2 px-4">
-                    {result?.model_summary?.prob_f_statistic === 'nan' ? 'N/A' : 
-                     typeof result?.model_summary?.prob_f_statistic === 'number' ? 
-                     result.model_summary.prob_f_statistic.toFixed(6) : 'N/A'}
-                  </td>
-                ))}
-              </tr>
-              <tr className="bg-gray-50">
-                <td className="py-2 px-4">
-                  <Tooltip 
-                    title="Condition Number"
-                    description="Measures the numerical stability of the model."
-                    guidance="Lower values indicate better stability. Values above 30 suggest potential issues."
-                  />
-                </td>
-                {Object.values(regressionResults).map((result, index) => (
-                  <td key={index} className="py-2 px-4">
-                    {!isNaN(result?.diagnostics?.condition_number) ? result.diagnostics.condition_number.toFixed(2) : 'N/A'}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="py-2 px-4">
-                  <Tooltip 
-                    title="Observations"
-                    description="Number of data points used in the analysis."
-                    guidance="More observations generally lead to more reliable results."
-                  />
-                </td>
-                {Object.values(regressionResults).map((result, index) => (
-                  <td key={index} className="py-2 px-4">
-                    {result?.model_summary?.observations || 'N/A'}
-                  </td>
-                ))}
-              </tr>
+                  {Object.values(regressionResults).map((result, index) => (
+                    <td key={index} className={`py-2 px-4 ${row.title === 'Equation' ? 'font-mono text-sm' : ''}`}>
+                      {row.getValue(result)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -218,3 +181,5 @@ export function StatisticalResultsMultiple() {
     </div>
   );
 }
+
+export { StatisticalResultsMultiple }
