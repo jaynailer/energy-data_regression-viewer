@@ -45,7 +45,7 @@ export function MultipleRegression() {
   const prepareChartData = () => {
     if (!data?.dataset?.usage_data || !selectedTemp) return [];
 
-    return data.dataset.usage_data
+    const chartData = data.dataset.usage_data
       .filter(entry => 
         typeof entry[selectedTemp] === 'number' && 
         !isNaN(entry[selectedTemp]) &&
@@ -59,6 +59,9 @@ export function MultipleRegression() {
         y: entry.usage,
         z: entry.predictor_1
       }));
+
+    // Sort by x value for proper line rendering
+    return chartData.sort((a, b) => a.x - b.x);
   };
 
   const getRegressionLineData = () => {
@@ -73,19 +76,14 @@ export function MultipleRegression() {
     if (points.length === 0) return [];
 
     if (showSimple) {
-      const xMin = Math.min(...points.map(p => p.x));
-      const xMax = Math.max(...points.map(p => p.x));
       const intercept = results.coefficients[0]?.coef ?? 0;
       const coefficient = results.coefficients[1]?.coef ?? 0;
 
-      const numPoints = 100;
-      const step = (xMax - xMin) / (numPoints - 1);
-
-      return Array.from({ length: numPoints }, (_, i) => {
-        const x = xMin + step * i;
-        const y = intercept + coefficient * x;
-        return { x, y };
-      });
+      // Use actual x values for the line
+      return points.map(point => ({
+        x: point.x,
+        y: intercept + coefficient * point.x
+      }));
     }
 
     return [];
@@ -168,7 +166,7 @@ export function MultipleRegression() {
                     type="number"
                     dataKey="z"
                     name={predictorName}
-                    range={[50, 400]}
+                    range={[20, 100]}
                   />
                 )}
                 <Tooltip
@@ -196,16 +194,16 @@ export function MultipleRegression() {
                 <Scatter 
                   name="Data Points"
                   data={chartData}
-                  fill={showSimple ? "#2C5265" : "#AD435A"}
+                  fill="#2C5265"
                   opacity={0.7}
-                  r={6}
+                  r={showSimple ? 6 : undefined}
                 />
                 {showSimple && lineData.length > 0 && (
                   <Line
                     type="linear"
                     dataKey="y"
                     data={lineData}
-                    stroke="#2C5265"
+                    stroke="#AD435A"
                     strokeWidth={2}
                     dot={false}
                     activeDot={false}
