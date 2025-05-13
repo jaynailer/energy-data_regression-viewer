@@ -39,10 +39,19 @@ export function StatisticalResultsMultiple() {
 
   // Format column header
   const formatColumnHeader = (temp: string) => {
-    if (temp === 'none') return predictorName;
-    const [kind, baseTemp] = temp.match(/(hdd|cdd)\(([^)]+)\)/i)?.slice(1) || [];
-    if (!kind || !baseTemp) return temp;
-    return `${kind.toUpperCase()}(${baseTemp}) & ${predictorName}`;
+    if (showSimple) {
+      if (temp === 'none') return predictorName;
+      const match = temp.match(/(hdd|cdd)\(([^)]+)\)/i);
+      if (!match) return temp;
+      const [_, kind, baseTemp] = match;
+      return `${kind.toUpperCase()}(${baseTemp})`;
+    } else {
+      if (temp === 'none') return predictorName;
+      const match = temp.match(/(hdd|cdd)\(([^)]+)\)/i);
+      if (!match) return temp;
+      const [_, kind, baseTemp] = match;
+      return `${kind.toUpperCase()}(${baseTemp}) & ${predictorName}`;
+    }
   };
 
   // Format table rows based on regression type
