@@ -8,7 +8,16 @@ export function MultipleRegression() {
   const { data } = useDatasetContext();
   const { showSimple, setShowSimple } = useRegressionType();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [selectedTemp, setSelectedTemp] = useState<string>('');
+  const [selectedTemp, setSelectedTemp] = useState<string>(() => {
+    if (!data?.dataset?.usage_data?.[0]) return '';
+    
+    // Find the first temperature key that has valid data
+    const temps = Object.keys(data.dataset.usage_data[0])
+      .filter(key => key.match(/^(hdd|cdd)\(\d+(?:\.\d+)?\)$/i))
+      .sort();
+    
+    return temps[0] || '';
+  });
 
   // Extract unique base temperatures from the data
   const baseTemps = data?.dataset?.usage_data?.[0] 
@@ -20,7 +29,9 @@ export function MultipleRegression() {
   // Set initial selected temperature
   useEffect(() => {
     if (baseTemps.length > 0 && !selectedTemp) {
-      setSelectedTemp(baseTemps[0]);
+      const firstTemp = baseTemps[0];
+      console.log('Setting initial temperature:', firstTemp);
+      setSelectedTemp(firstTemp);
     }
   }, [baseTemps, selectedTemp]);
 
@@ -64,9 +75,12 @@ export function MultipleRegression() {
   };
 
   const getRegressionLineData = () => {
+    if (!selectedTemp) return [];
+    
+    const regressionKey = showSimple ? 'simple_regressions' : 'multiple_regressions';
     const results = showSimple 
-      ? data?.dataset?.regression_results?.simple_regressions?.[selectedTemp]
-      : data?.dataset?.regression_results?.multiple_regressions?.[selectedTemp];
+      ? data?.dataset?.regression_results?.[regressionKey]?.[selectedTemp]
+      : data?.dataset?.regression_results?.[regressionKey]?.[`${selectedTemp}_${predictorName}`];
 
     if (!results?.coefficients) return [];
 
@@ -99,9 +113,10 @@ export function MultipleRegression() {
   const chartData = prepareChartData();
   const lineData = getRegressionLineData();
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
+  const regressionKey = showSimple ? 'simple_regressions' : 'multiple_regressions';
   const results = showSimple 
-    ? data?.dataset?.regression_results?.simple_regressions?.[selectedTemp]
-    : data?.dataset?.regression_results?.multiple_regressions?.[selectedTemp];
+    ? data?.dataset?.regression_results?.[regressionKey]?.[selectedTemp]
+    : data?.dataset?.regression_results?.[regressionKey]?.[`${selectedTemp}_${predictorName}`];
 
   return (
     <div className="bg-[#f5f7f5] rounded-[25px] p-6 shadow-lg">
