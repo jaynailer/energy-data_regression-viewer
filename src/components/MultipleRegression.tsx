@@ -66,11 +66,6 @@ export function MultipleRegression() {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xffffff);
 
-    // Set up orbit controls for better interaction
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-
     // Set up camera
     const camera = new THREE.PerspectiveCamera(75, containerRef.current.clientWidth / containerRef.current.clientHeight, 0.1, 1000);
     camera.position.set(2, 2, 2);
@@ -81,6 +76,11 @@ export function MultipleRegression() {
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
     containerRef.current.innerHTML = '';
     containerRef.current.appendChild(renderer.domElement);
+
+    // Set up orbit controls for better interaction
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
 
     // Create axes
     const axesHelper = new THREE.AxesHelper(1);
@@ -109,7 +109,6 @@ export function MultipleRegression() {
       const z = zMax === zMin ? 0 : ((point.z - zMin) / (zMax - zMin)) * 2 - 1;
 
       positions[i * 3] = x;
-      positions[i * 3] = x;
       positions[i * 3 + 1] = z;
       positions[i * 3 + 2] = y;
     });
@@ -126,6 +125,7 @@ export function MultipleRegression() {
     scene.add(pointCloud);
 
     // Create regression surface
+    const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
     const multipleResults = data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`] || 
                            data?.dataset?.regression_results?.multiple_regressions?.none;
 
@@ -196,13 +196,11 @@ export function MultipleRegression() {
       return sprite;
     };
 
-    const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
     scene.add(createLabel(selectedTemp, new THREE.Vector3(1.2, 0, 0)));
     scene.add(createLabel('Usage', new THREE.Vector3(0, 1.2, 0)));
     scene.add(createLabel(predictorName, new THREE.Vector3(0, 0, 1.2)));
 
     // Add equation to the scene
-    const multipleResults = data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`] || data?.dataset?.regression_results?.multiple_regressions?.none;
     const equation = formatEquation(multipleResults);
     const createEquationLabel = () => {
       const canvas = document.createElement('canvas');
