@@ -1,8 +1,7 @@
 import React from 'react';
 import { ProjectInfo } from './components/ProjectInfo';
 import { Map } from './components/Map';
-import { LinearRegression } from './components/LinearRegression';
-import { MultipleRegression } from './components/MultipleRegression';
+import { SimpleRegressionGraph } from './components/SimpleRegressionGraph';
 import { StatisticalResults } from './components/StatisticalResults';
 import { StatisticalResultsMultiple } from './components/StatisticalResultsMultiple';
 import { ResultsInterpretation } from './components/ResultsInterpretation';
@@ -80,17 +79,7 @@ function App() {
         
         <div className="grid grid-cols-1 gap-6">
           <Map />
-          {showLinearRegression ? (
-            <>
-              <LinearRegression />
-              <StatisticalResults />
-            </>
-          ) : (
-            <>
-              <MultipleRegression />
-              <StatisticalResultsMultiple />
-            </>
-          )}
+          <SimpleRegressionGraph />
           <ResultsInterpretation />
         </div>
         
