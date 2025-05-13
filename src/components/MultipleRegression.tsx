@@ -45,7 +45,7 @@ export function MultipleRegression() {
   const prepareChartData = () => {
     if (!data?.dataset?.usage_data || !selectedTemp) return [];
 
-    const chartData = data.dataset.usage_data
+    return data.dataset.usage_data
       .filter(entry => 
         typeof entry[selectedTemp] === 'number' && 
         !isNaN(entry[selectedTemp]) &&
@@ -57,11 +57,9 @@ export function MultipleRegression() {
       .map(entry => ({
         x: entry[selectedTemp],
         y: entry.usage,
-        z: entry.predictor_1
+        z: entry.predictor_1,
+        size: showSimple ? 60 : entry.predictor_1
       }));
-
-    // Sort by x value for proper line rendering
-    return chartData.sort((a, b) => a.x - b.x);
   };
 
   const getRegressionLineData = () => {
@@ -133,7 +131,7 @@ export function MultipleRegression() {
       
       <div className="space-y-4">
         <div 
-          className="bg-white rounded-[25px] p-4"
+          className="bg-white rounded-[25px] p-4 overflow-hidden"
         >
           {results && (
             <div className="mb-4 text-sm text-[#2C5265]">
@@ -144,7 +142,7 @@ export function MultipleRegression() {
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 20, right: 20, bottom: 50, left: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <CartesianGrid stroke="#E5E7EB" />
                 <XAxis
                   type="number"
                   dataKey="x"
@@ -163,11 +161,11 @@ export function MultipleRegression() {
                 />
                 {!showSimple && (
                   <ZAxis
-                    type="number"
-                    dataKey="z"
+                    dataKey="size"
                     name={predictorName}
-                    range={[20, 100]}
+                    range={[50, 400]}
                   />
+                  
                 )}
                 <Tooltip
                   cursor={{ strokeDasharray: '3 3' }}
@@ -194,9 +192,10 @@ export function MultipleRegression() {
                 <Scatter 
                   name="Data Points"
                   data={chartData}
-                  fill="#2C5265"
-                  opacity={0.7}
-                  r={showSimple ? 6 : undefined}
+                  fill={showSimple ? "#2C5265" : "#AD435A"}
+                  fillOpacity={0.6}
+                  shape="circle"
+                  legendType="none"
                 />
                 {showSimple && lineData.length > 0 && (
                   <Line
