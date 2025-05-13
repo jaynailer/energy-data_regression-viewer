@@ -37,6 +37,12 @@ export function StatisticalResultsMultiple() {
   const regressionResults = showSimple ? simpleResults : multipleResults;
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
 
+  // Format column header
+  const formatColumnHeader = (temp: string) => {
+    if (temp === 'none') return predictorName;
+    return `${temp.replace(/^(cdd|hdd)/i, (match) => match.toUpperCase())} & ${predictorName}`;
+  };
+
   // Format table rows based on regression type
   const getTableRows = () => {
     const commonRows = [
@@ -86,14 +92,6 @@ export function StatisticalResultsMultiple() {
         description: "Tests the overall significance of the regression model.",
         guidance: "Higher values indicate a stronger relationship between predictors and the dependent variable.",
         getValue: (result: any) => !isNaN(result?.model_summary?.f_statistic) ? result.model_summary.f_statistic.toFixed(2) : 'N/A'
-      },
-      {
-        title: "p-value (F-statistic)",
-        description: "Statistical significance of the overall model.",
-        guidance: "Values below 0.05 indicate the model is statistically significant.",
-        getValue: (result: any) => result?.model_summary?.prob_f_statistic === 'nan' ? 'N/A' : 
-          typeof result?.model_summary?.prob_f_statistic === 'number' ? 
-          result.model_summary.prob_f_statistic.toFixed(6) : 'N/A'
       },
       {
         title: "Condition Number",
@@ -152,7 +150,7 @@ export function StatisticalResultsMultiple() {
                 <th className="py-3 px-4 text-left font-semibold">Metric</th>
                 {Object.keys(regressionResults).map(temp => (
                   <th key={temp} className="py-3 px-4 text-left font-semibold">
-                    {temp.replace(/^(cdd|hdd)/i, (match) => match.toUpperCase())}
+                    {formatColumnHeader(temp)}
                   </th>
                 ))}
               </tr>
