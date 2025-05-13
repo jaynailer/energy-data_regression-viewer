@@ -2,11 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Line } from 'recharts';
 import { LineChart } from 'lucide-react';
 import { useDatasetContext } from '../context/DatasetContext';
+import { useRegressionType } from '../context/RegressionTypeContext';
 
 export function SimpleRegressionGraph() {
   const { data } = useDatasetContext();
+  const { showSimple } = useRegressionType();
   const [selectedTemp, setSelectedTemp] = useState<string>('');
   const [equation, setEquation] = useState<string>('');
+
+  const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
+  const kind = data?.dataset?.metadata?.parameters?.kind;
+  const predictors = data?.dataset?.metadata?.parameters?.predictors || [];
+  const isPredictor = kind === 'none' && predictors.length === 1;
 
   // Get the first available temperature on component mount
   useEffect(() => {
@@ -37,25 +44,29 @@ export function SimpleRegressionGraph() {
         typeof entry[selectedTemp] === 'number' && 
         !isNaN(entry[selectedTemp]) &&
         typeof entry.usage === 'number' && 
-        !isNaN(entry.usage)
+        !isNaN(entry.usage) &&
+        (!isPredictor || (typeof entry.predictor_1 === 'number' && !isNaN(entry.predictor_1)))
       )
       .map(entry => ({
-        x: entry[selectedTemp],
-        y: entry.usage
+        x: isPredictor ? entry.predictor_1 : entry[selectedTemp],
+        y: entry.usage,
+        begin_period: entry.begin_period,
+        end_period: entry.end_period,
+        predictor_1: entry.predictor_1
       }));
   }, [data, selectedTemp]);
 
   const regressionLineData = React.useMemo(() => {
-    if (!data?.dataset?.regression_results?.simple_regressions?.[selectedTemp]) return [];
+    const regressionKey = isPredictor ? 'none' : selectedTemp;
+    const results = data?.dataset?.regression_results?.simple_regressions?.[regressionKey];
     
-    const results = data.dataset.regression_results.simple_regressions[selectedTemp];
     if (!results?.coefficients) return [];
 
     const intercept = results.coefficients[0]?.coef ?? 0;
     const coefficient = results.coefficients[1]?.coef ?? 0;
 
     // Update equation
-    setEquation(`Usage = ${intercept.toFixed(2)} ${coefficient >= 0 ? '+' : ''}${coefficient.toFixed(2)} × ${formatTemp(selectedTemp)}`);
+    setEquation(`Usage = ${intercept.toFixed(2)} ${coefficient >= 0 ? '+' : ''}${coefficient.toFixed(2)} × ${isPredictor ? predictorName : formatTemp(selectedTemp)}`);
 
     // Create line with points at min and max x values
     const xValues = chartData.map(point => point.x);
@@ -90,9 +101,11 @@ export function SimpleRegressionGraph() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <LineChart className="w-6 h-6 text-[#2C5265]" />
-          <h2 className="text-2xl font-bold text-[#2C5265]">Simple Regression</h2>
+          <h2 className="text-2xl font-bold text-[#2C5265]">
+            {isPredictor ? `${predictorName} Regression` : 'Simple Regression'}
+          </h2>
         </div>
-        <div className="flex gap-2">
+        {!isPredictor && <div className="flex gap-2">
           {Object.keys(data?.dataset?.usage_data?.[0] || {})
             .filter(key => key.match(/^(cdd|hdd)\(\d+(?:\.\d+)?\)$/i))
             .sort()
@@ -110,6 +123,7 @@ export function SimpleRegressionGraph() {
               </button>
             ))}
         </div>
+        }
       </div>
       
       <div className="bg-white rounded-[25px] p-6">
@@ -125,9 +139,9 @@ export function SimpleRegressionGraph() {
             <XAxis
               type="number"
               dataKey="x"
-              name={selectedTemp}
+              name={isPredictor ? predictorName : selectedTemp}
               label={{
-                value: selectedTemp.toUpperCase(), 
+                value: isPredictor ? predictorName : selectedTemp.toUpperCase(), 
                 position: 'bottom', 
                 offset: 20 
               }}
@@ -151,11 +165,21 @@ export function SimpleRegressionGraph() {
                 return (
                   <div className="bg-white p-2 border border-gray-200 rounded shadow">
                     <p className="text-sm text-[#2C5265]">
-                      {formatTemp(selectedTemp)}: {data.x.toFixed(2)}
+                      {isPredictor ? predictorName : formatTemp(selectedTemp)}: {data.x.toFixed(2)}
                     </p>
                     <p className="text-sm text-[#2C5265]">
                       Usage: {data.y.toFixed(2)}
                     </p>
+                    {data.begin_period && (
+                      <p className="text-sm text-[#2C5265]">
+                        Period: {new Date(data.begin_period).toLocaleDateString()} - {new Date(data.end_period).toLocaleDateString()}
+                      </p>
+                    )}
+                    {!isPredictor && data.predictor_1 != null && (
+                      <p className="text-sm text-[#2C5265]">
+                        {predictorName}: {data.predictor_1.toFixed(2)}
+                      </p>
+                    )}
                   </div>
                 );
               }}
