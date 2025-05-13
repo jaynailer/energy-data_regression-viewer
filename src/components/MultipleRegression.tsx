@@ -71,9 +71,8 @@ export function MultipleRegression() {
   useEffect(() => {
     const chartData = prepareChartData();
     console.log('Chart data prepared:', {
-      points: chartData.length,
-      samplePoint: chartData[0]
-  };
+    });
+  }, [data, selectedTemp, showSimple]);
 
   const getRegressionLineData = () => {
     const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
@@ -112,7 +111,11 @@ export function MultipleRegression() {
     }
 
     return [];
-  };
+      dataPoints: chartData.length,
+      samplePoint: chartData[0],
+      selectedTemp,
+      showSimple
+    });
 
   const chartData = prepareChartData();
   const lineData = getRegressionLineData();
@@ -192,7 +195,6 @@ export function MultipleRegression() {
                     name={predictorName}
                     range={[50, 400]}
                   />
-                  
                 )}
                 <Tooltip
                   cursor={{ strokeDasharray: '3 3' }}
