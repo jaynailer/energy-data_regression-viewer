@@ -76,7 +76,9 @@ export function StatisticalResultsMultiple() {
               <tr>
                 <th className="py-3 px-4 text-left font-semibold">Metric</th>
                 {Object.keys(regressionResults).map(temp => (
-                  <th key={temp} className="py-3 px-4 text-left font-semibold">{temp}</th>
+                  <th key={temp} className="py-3 px-4 text-left font-semibold">
+                    {temp.replace(/^(cdd|hdd)/i, (match) => match.toUpperCase())}
+                  </th>
                 ))}
               </tr>
             </thead>

@@ -11,7 +11,7 @@ export function MultipleRegression() {
   // Extract unique base temperatures from the data
   const baseTemps = data?.dataset?.usage_data?.[0] 
     ? Object.keys(data.dataset.usage_data[0])
-      .filter(key => key.startsWith('hdd(') || key.startsWith('cdd('))
+      .filter(key => key.startsWith('HDD(') || key.startsWith('CDD('))
       .sort()
     : [];
 
@@ -147,7 +147,8 @@ export function MultipleRegression() {
     scene.add(createLabel(predictorName, new THREE.Vector3(0, 0, 1.2)));
 
     // Add equation to the scene
-    const multipleResults = data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_predictor1`] || data?.dataset?.regression_results?.multiple_regressions?.none;
+    const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
+    const multipleResults = data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`] || data?.dataset?.regression_results?.multiple_regressions?.none;
     const equation = formatEquation(multipleResults);
     const createEquationLabel = () => {
       const canvas = document.createElement('canvas');
@@ -226,8 +227,8 @@ export function MultipleRegression() {
                     ? 'bg-[#2C5265] text-white'
                     : 'bg-white text-[#2C5265] hover:bg-[#2C5265]/10'
                 }`}
-              >
-                {temp}
+              > 
+                {temp.replace(/^(cdd|hdd)/i, (match) => match.toUpperCase())}
               </button>
             ))}
           </div>
