@@ -126,7 +126,9 @@ export function StatisticalResultsMultiple() {
     
     const intercept = results.coefficients[0]?.coef ?? 0;
     const degreeDay = results.coefficients[1]?.coef ?? 0;
-    const degreeDayVar = results.coefficients[1]?.variable ?? 'Degree Days';
+    const degreeDayVar = showSimple && results.coefficients[1]?.variable === 'predictor_1' 
+      ? predictorName 
+      : results.coefficients[1]?.variable ?? 'Degree Days';
     
     if (showSimple) {
       return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar}`;
