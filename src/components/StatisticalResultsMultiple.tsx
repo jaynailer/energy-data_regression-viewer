@@ -1,6 +1,7 @@
 import React from 'react';
 import { BarChart3, HelpCircle, SwitchCamera } from 'lucide-react';
 import { useDatasetContext } from '../context/DatasetContext';
+import { useRegressionType } from '../context/RegressionTypeContext';
 
 interface TooltipProps {
   title: string;
@@ -24,7 +25,7 @@ function Tooltip({ title, description, guidance }: TooltipProps) {
 
 export function StatisticalResultsMultiple() {
   const { data } = useDatasetContext();
-  const [showSimple, setShowSimple] = React.useState(false);
+  const { showSimple, setShowSimple } = useRegressionType();
 
   const kind = data?.dataset?.metadata?.parameters?.kind;
   const multipleResults = kind === 'none'

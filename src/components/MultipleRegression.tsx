@@ -2,9 +2,11 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Network } from 'lucide-react';
 import * as THREE from 'three';
 import { useDatasetContext } from '../context/DatasetContext';
+import { useRegressionType } from '../context/RegressionTypeContext';
 
 export function MultipleRegression() {
   const { data } = useDatasetContext();
+  const { showSimple, setShowSimple } = useRegressionType();
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedTemp, setSelectedTemp] = useState<string>('');
 
@@ -213,10 +215,35 @@ export function MultipleRegression() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <Network className="w-6 h-6 text-[#2C5265]" />
-          <h2 className="text-2xl font-bold text-[#2C5265]">Multiple Regression</h2>
+          <h2 className="text-2xl font-bold text-[#2C5265]">{showSimple ? 'Simple' : 'Multiple'} Regression</h2>
         </div>
-        {baseTemps.length > 1 && (
-          <div className="flex gap-2">
+        <div className="flex items-center gap-4">
+          {baseTemps.length > 1 && (
+            <div className="flex gap-2">
+              {baseTemps.map(temp => (
+                <button
+                  key={temp}
+                  onClick={() => setSelectedTemp(temp)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                    selectedTemp === temp
+                      ? 'bg-[#2C5265] text-white'
+                      : 'bg-white text-[#2C5265] hover:bg-[#2C5265]/10'
+                  }`}
+                > 
+                  {temp.replace(/^(cdd|hdd)/i, (match) => match.toUpperCase())}
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={() => setShowSimple(!showSimple)}
+            className="flex items-center gap-2 px-4 py-2 bg-white rounded-full text-[#2C5265] hover:bg-[#2C5265]/10 transition-colors"
+          >
+            <SwitchCamera className="w-4 h-4" />
+            <span>Switch to {showSimple ? 'Multiple' : 'Simple'} Regression</span>
+          </button>
+        </div>
+      </div>
             {baseTemps.map(temp => (
               <button
                 key={temp}
