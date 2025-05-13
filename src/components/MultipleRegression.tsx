@@ -26,10 +26,10 @@ export function MultipleRegression() {
   const formatEquation = (results: any) => {
     if (!results?.coefficients || results.coefficients.length < 3) return 'N/A';
     
-    const intercept = results.coefficients[0]?.coef ?? 0;
-    const degreeDay = results.coefficients[1]?.coef ?? 0;
-    const predictor = results.coefficients[2]?.coef ?? 0;
-    const degreeDayVar = results.coefficients[1]?.variable ?? 'DD';
+    const intercept = results?.coefficients?.[0]?.coef ?? 0;
+    const degreeDay = results?.coefficients?.[1]?.coef ?? 0;
+    const predictor = results?.coefficients?.[2]?.coef ?? 0;
+    const degreeDayVar = results?.coefficients?.[1]?.variable ?? 'DD';
     const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
     
     return `Usage = ${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
@@ -41,12 +41,10 @@ export function MultipleRegression() {
     // Get data points and filter out invalid values
     const validPoints = data.dataset.usage_data
       .filter(entry => 
-        typeof entry[selectedTemp] === 'number' && 
-        !isNaN(entry[selectedTemp]) &&
-        typeof entry.usage === 'number' && 
-        !isNaN(entry.usage) &&
-        typeof entry.predictor_1 === 'number' && 
-        !isNaN(entry.predictor_1)
+        entry && 
+        typeof entry[selectedTemp] === 'number' && !isNaN(entry[selectedTemp]) &&
+        typeof entry.usage === 'number' && !isNaN(entry.usage) &&
+        typeof entry.predictor_1 === 'number' && !isNaN(entry.predictor_1)
       )
       .map(entry => ({
         x: entry[selectedTemp],
