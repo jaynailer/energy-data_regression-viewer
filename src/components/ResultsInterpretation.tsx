@@ -15,14 +15,10 @@ export function ResultsInterpretation() {
     try {
       const payload = {
         parameters: data?.dataset?.metadata?.parameters,
-        regression_results: {
-          multiple_regressions: data?.dataset?.metadata?.parameters?.kind === 'none'
-            ? { none: data?.dataset?.regression_results?.multiple_regressions?.none }
-            : data?.dataset?.regression_results?.multiple_regressions
-        }
+        regression_results: data?.dataset?.regression_results
       };
 
-      if (!payload.parameters || !payload.regression_results.multiple_regressions) {
+      if (!payload.parameters || !payload.regression_results) {
         throw new Error('No regression results available');
       }
 

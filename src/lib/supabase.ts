@@ -11,9 +11,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface InterpretationPayload {
   parameters: any;
-  regression_results: {
-    multiple_regressions: any;
-  };
+  regression_results: any;
 }
 
 export async function getInterpretation(payload: InterpretationPayload): Promise<string> {
