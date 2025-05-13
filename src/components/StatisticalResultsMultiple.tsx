@@ -38,14 +38,18 @@ export function StatisticalResultsMultiple() {
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
 
   const formatEquation = (results: any) => {
-    if (!results?.coefficients || results.coefficients.length < 3) return 'N/A';
+    if (!results?.coefficients) return 'N/A';
     
     const intercept = results.coefficients[0]?.coef ?? 0;
     const degreeDay = results.coefficients[1]?.coef ?? 0;
-    const predictor = results.coefficients[2]?.coef ?? 0;
     const degreeDayVar = results.coefficients[1]?.variable ?? 'Degree Days';
     
-    return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
+    if (showSimple) {
+      return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar}`;
+    } else {
+      const predictor = results.coefficients[2]?.coef ?? 0;
+      return `${intercept.toFixed(2)} ${degreeDay >= 0 ? '+' : ''}${degreeDay.toFixed(2)} × ${degreeDayVar} ${predictor >= 0 ? '+' : ''}${predictor.toFixed(2)} × ${predictorName}`;
+    }
   };
 
   return (

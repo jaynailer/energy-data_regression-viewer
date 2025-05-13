@@ -2,8 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Network } from 'lucide-react';
 import * as THREE from 'three';
 import { useDatasetContext } from '../context/DatasetContext';
-
-export function MultipleRegression() {
+export default function MultipleRegression() {
   const { data } = useDatasetContext();
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedTemp, setSelectedTemp] = useState<string>('');
@@ -147,7 +146,7 @@ export function MultipleRegression() {
     scene.add(createLabel(predictorName, new THREE.Vector3(0, 0, 1.2)));
 
     // Add equation to the scene
-    const multipleResults = data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_predictor1`];
+    const multipleResults = data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_predictor1`] || data?.dataset?.regression_results?.multiple_regressions?.none;
     const equation = formatEquation(multipleResults);
     const createEquationLabel = () => {
       const canvas = document.createElement('canvas');
@@ -243,5 +242,3 @@ export function MultipleRegression() {
     </div>
   );
 }
-
-export default MultipleRegression;
