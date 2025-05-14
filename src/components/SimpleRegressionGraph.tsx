@@ -286,5 +286,3 @@ export function SimpleRegressionGraph() {
     </div>
   );
 }
-
-export { SimpleRegressionGraph }
