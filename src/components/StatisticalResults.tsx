@@ -1,8 +1,8 @@
 import React from 'react';
 import { BarChart3, HelpCircle } from 'lucide-react';
 import { useDatasetContext } from '../context/DatasetContext';
-
 import { Tooltip } from './Tooltip';
+import MathJax from 'react-mathjax';
 
 export function StatisticalResults() {
   const { data } = useDatasetContext();
@@ -22,7 +22,9 @@ export function StatisticalResults() {
     const coefficient = results.coefficients.find(c => c.variable !== 'const')?.coef ?? 0;
     const variable = results.coefficients.find(c => c.variable !== 'const')?.variable || '';
     
-    return `${intercept.toFixed(2)} ${coefficient >= 0 ? '+' : ''}${coefficient.toFixed(2)} × ${variable}`;
+    return (
+      <MathJax.Node inline formula={`\\text{Usage} = ${intercept.toFixed(2)} ${coefficient >= 0 ? '+' : ''}${coefficient.toFixed(2)} \\times \\text{${variable}}`} />
+    );
   };
 
   return (
@@ -53,7 +55,9 @@ export function StatisticalResults() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4 font-mono text-sm">
-                    {formatEquation(result)}
+                    <MathJax.Provider>
+                      {formatEquation(result)}
+                    </MathJax.Provider>
                   </td>
                 ))}
               </tr>
@@ -67,9 +71,11 @@ export function StatisticalResults() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.model_summary?.r_squared != null && !isNaN(result.model_summary.r_squared) 
-                      ? result.model_summary.r_squared.toFixed(3) 
-                      : 'N/A'}
+                    <MathJax.Provider>
+                      {result?.model_summary?.r_squared != null && !isNaN(result.model_summary.r_squared) 
+                        ? <MathJax.Node inline formula={`R^2 = ${result.model_summary.r_squared.toFixed(3)}`} />
+                        : 'N/A'}
+                    </MathJax.Provider>
                   </td>
                 ))}
               </tr>
