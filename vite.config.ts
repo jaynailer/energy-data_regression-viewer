@@ -12,11 +12,17 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['lucide-react'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
+    }
   },
   define: {
     'process.env': {},
     global: 'globalThis',
-    Buffer: ['buffer', 'Buffer']
+    Buffer: ['buffer', 'Buffer'],
+    'global.Image': 'Image'
   },
   base: '',
   build: {
