@@ -204,8 +204,7 @@ export function SimpleRegressionGraph() {
                 {formatTemp(temp)}
               </button>
             ))}
-        </div>
-        }
+        </div>}
       </div>
       
       <div className="bg-white rounded-[25px] p-6">
@@ -285,3 +284,4 @@ export function SimpleRegressionGraph() {
       </div>
     </div>
   );
+}
