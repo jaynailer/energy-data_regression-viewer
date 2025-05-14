@@ -13,11 +13,11 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
-  // Ensure environment variables are replaced during build
   define: {
     'process.env': {},
+    global: 'globalThis',
+    Buffer: ['buffer', 'Buffer']
   },
-  // Use relative paths for assets
   base: '',
   build: {
     sourcemap: true,

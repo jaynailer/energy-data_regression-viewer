@@ -167,7 +167,6 @@ export function SimpleRegressionGraph() {
     ];
   }, [data, selectedTemp, chartData, isPredictor, predictorName]);
 
-
   if (!selectedTemp || chartData.length === 0) {
     return (
       <div className="bg-white rounded-[25px] p-6">
@@ -187,24 +186,26 @@ export function SimpleRegressionGraph() {
             {isPredictor ? `${predictorName} Regression` : 'Simple Regression'}
           </h2>
         </div>
-        {!isPredictor && data?.dataset?.usage_data?.[0] && <div className="flex gap-2">
-          {Object.keys(data.dataset.usage_data[0])
-            .filter(key => key.match(/^(cdd|hdd)\(\d+(?:\.\d+)?\)$/i))
-            .sort()
-            .map(temp => (
-              <button
-                key={temp}
-                onClick={() => setSelectedTemp(temp)}
-                className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                  selectedTemp === temp
-                    ? 'bg-[#2C5265] text-white'
-                    : 'bg-white text-[#2C5265] hover:bg-[#2C5265]/10'
-                }`}
-              >
-                {formatTemp(temp)}
-              </button>
-            ))}
-        </div>}
+        {!isPredictor && data?.dataset?.usage_data?.[0] && (
+          <div className="flex gap-2">
+            {Object.keys(data.dataset.usage_data[0])
+              .filter(key => key.match(/^(cdd|hdd)\(\d+(?:\.\d+)?\)$/i))
+              .sort()
+              .map(temp => (
+                <button
+                  key={temp}
+                  onClick={() => setSelectedTemp(temp)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                    selectedTemp === temp
+                      ? 'bg-[#2C5265] text-white'
+                      : 'bg-white text-[#2C5265] hover:bg-[#2C5265]/10'
+                  }`}
+                >
+                  {formatTemp(temp)}
+                </button>
+              ))}
+          </div>
+        )}
       </div>
       
       <div className="bg-white rounded-[25px] p-6">
