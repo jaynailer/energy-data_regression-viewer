@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Line } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import { LineChart } from 'lucide-react';
 import { useDatasetContext } from '../context/DatasetContext';
 import { useRegressionType } from '../context/RegressionTypeContext';
@@ -190,14 +190,13 @@ export function SimpleRegressionGraph() {
               fill="#2C5265"
               shape="circle" 
             />
-            <Line
+            <Scatter
               data={regressionLineData}
-              type="linear"
-              dataKey="y"
-              stroke="#AD435A" 
+              fill="#AD435A"
+              stroke="#AD435A"
               strokeWidth={2}
-              dot={false}
-              isAnimationActive={false}
+              line={true}
+              shape={() => null}
             />
           </ScatterChart>
           </ResponsiveContainer>
