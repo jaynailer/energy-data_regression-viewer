@@ -8,7 +8,7 @@ export function SimpleRegressionGraph() {
   const { data } = useDatasetContext();
   const { showSimple } = useRegressionType();
   const [selectedTemp, setSelectedTemp] = useState<string>('');
-  const [equation, setEquation] = useState<string>('');
+  const [regressionParams, setRegressionParams] = useState<{ intercept: number; coefficient: number } | null>(null);
 
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
   const kind = data?.dataset?.metadata?.parameters?.kind;
@@ -60,19 +60,20 @@ export function SimpleRegressionGraph() {
     const regressionKey = isPredictor ? 'none' : selectedTemp;
     const results = data?.dataset?.regression_results?.simple_regressions?.[regressionKey];
     
-    if (!results?.coefficients) return [];
+    if (!results?.coefficients || chartData.length === 0) return [];
 
     const intercept = results.coefficients[0]?.coef ?? 0;
     const coefficient = results.coefficients[1]?.coef ?? 0;
 
-    // Update equation
-    setEquation(`Usage = ${intercept.toFixed(2)} ${coefficient >= 0 ? '+' : ''}${coefficient.toFixed(2)} × ${isPredictor ? predictorName : formatTemp(selectedTemp)}`);
+    // Update regression parameters
+    setRegressionParams({ intercept, coefficient });
 
-    // Create line with points at min and max x values
+    // Get min and max x values from the data
     const xValues = chartData.map(point => point.x);
     const xMin = Math.min(...xValues);
     const xMax = Math.max(...xValues);
 
+    // Create regression line points
     return [
       {
         x: xMin,
@@ -127,9 +128,9 @@ export function SimpleRegressionGraph() {
       </div>
       
       <div className="bg-white rounded-[25px] p-6">
-        {equation && (
+        {regressionParams && (
           <div className="mb-4 text-sm text-[#2C5265] font-mono">
-            {equation}
+            Usage = {regressionParams.intercept.toFixed(2)} {regressionParams.coefficient >= 0 ? '+' : ''}{regressionParams.coefficient.toFixed(2)} × {isPredictor ? predictorName : formatTemp(selectedTemp)}
           </div>
         )}
         <div className="h-[500px]">
@@ -193,7 +194,7 @@ export function SimpleRegressionGraph() {
               data={regressionLineData}
               type="linear"
               dataKey="y"
-              stroke="#AD435A"
+              stroke="#AD435A" 
               strokeWidth={2}
               dot={false}
               isAnimationActive={false}
