@@ -11,7 +11,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    exclude: ['probe-image-size', 'lucide-react'],
+    exclude: ['lucide-react'],
     esbuildOptions: {
       define: {
         global: 'globalThis'
