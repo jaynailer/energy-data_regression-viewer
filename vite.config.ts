@@ -15,7 +15,8 @@ export default defineConfig({
     exclude: ['lucide-react'],
     esbuildOptions: {
       define: {
-        global: 'globalThis'
+        global: 'globalThis',
+        'globalThis.Image': 'Image'
       }
     }
   },
@@ -23,7 +24,8 @@ export default defineConfig({
     'process.env': {},
     global: 'globalThis',
     Buffer: ['buffer', 'Buffer'],
-    'global.Image': 'Image'
+    'global.Image': 'Image',
+    'globalThis.Image': 'Image'
   },
   base: '',
   build: {
