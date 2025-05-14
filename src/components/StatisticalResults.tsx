@@ -7,7 +7,13 @@ import { Tooltip } from './Tooltip';
 export function StatisticalResults() {
   const { data } = useDatasetContext();
 
-  const regressionResults = data?.dataset?.regression_results?.multiple_regressions || {};
+  const kind = data?.dataset?.metadata?.parameters?.kind;
+  const predictors = data?.dataset?.metadata?.parameters?.predictors || [];
+  const isPredictor = kind === 'none' && predictors.length === 1;
+  
+  const regressionResults = isPredictor
+    ? { none: data?.dataset?.regression_results?.none }
+    : (data?.dataset?.regression_results?.simple_regressions || {});
 
   const formatEquation = (results: any) => {
     if (!results?.coefficients) return 'N/A';
@@ -110,7 +116,7 @@ export function StatisticalResults() {
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
                     {result?.model_summary?.prob_f_statistic
-                      ? result.model_summary.prob_f_statistic.replace('e-', '×10⁻')
+                      ? result.model_summary.prob_f_statistic.replace(/e[-+](\d+)/, '×10$1')
                       : 'N/A'}
                   </td>
                 ))}
