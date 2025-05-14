@@ -9,6 +9,7 @@ export function SimpleRegressionGraph() {
   const { showSimple } = useRegressionType();
   const [selectedTemp, setSelectedTemp] = useState<string>('');
   const [regressionParams, setRegressionParams] = useState<{ intercept: number; coefficient: number } | null>(null);
+  const [rSquared, setRSquared] = useState<number | null>(null);
 
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
   const kind = data?.dataset?.metadata?.parameters?.kind;
@@ -64,14 +65,15 @@ export function SimpleRegressionGraph() {
 
     const intercept = results.coefficients[0]?.coef ?? 0;
     const coefficient = results.coefficients[1]?.coef ?? 0;
+    const r2 = results.model_summary?.r_squared;
 
     // Update regression parameters
     setRegressionParams({ intercept, coefficient });
+    setRSquared(r2);
 
-    // Get min and max x values from the data
-    const xValues = chartData.map(point => point.x);
-    const xMin = Math.min(...xValues);
-    const xMax = Math.max(...xValues);
+    // Create regression line points with extended range
+    const xMin = 0; // Start from 0
+    const xMax = Math.max(...chartData.map(point => point.x)) * 1.2; // Extend 20% beyond max
 
     // Create regression line points
     return [
@@ -165,6 +167,12 @@ export function SimpleRegressionGraph() {
                 const data = payload[0].payload;
                 return (
                   <div className="bg-white p-2 border border-gray-200 rounded shadow">
+                    {regressionParams && (
+                      <div className="mb-2 text-sm text-[#2C5265] font-mono border-b border-gray-100 pb-2">
+                        <p>Usage = {regressionParams.intercept.toFixed(2)} {regressionParams.coefficient >= 0 ? '+' : ''}{regressionParams.coefficient.toFixed(2)} × {isPredictor ? predictorName : formatTemp(selectedTemp)}</p>
+                        <p>R² = {rSquared?.toFixed(3) || 'N/A'}</p>
+                      </div>
+                    )}
                     <p className="text-sm text-[#2C5265]">
                       {isPredictor ? predictorName : formatTemp(selectedTemp)}: {data.x.toFixed(2)}
                     </p>
