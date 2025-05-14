@@ -46,35 +46,38 @@ export function SimpleRegressionGraph() {
   const chartData = React.useMemo(() => {
     if (!data?.dataset?.usage_data || !selectedTemp) return [];
 
-    const validData = data.dataset.usage_data
-      .filter(entry => 
-        typeof entry[selectedTemp] === 'number' && 
-        !isNaN(entry[selectedTemp]) &&
-        typeof entry.usage === 'number' && 
-        !isNaN(entry.usage) &&
-        (typeof entry.predictor_1 === 'number' && !isNaN(entry.predictor_1))
-      )
+    return data.dataset.usage_data
+      .filter(entry => {
+        if (isPredictor) {
+          return typeof entry.predictor_1 === 'number' && 
+                 !isNaN(entry.predictor_1) &&
+                 typeof entry.usage === 'number' && 
+                 !isNaN(entry.usage);
+        }
+        return typeof entry[selectedTemp] === 'number' && 
+               !isNaN(entry[selectedTemp]) &&
+               typeof entry.usage === 'number' && 
+               !isNaN(entry.usage);
+      })
       .map(entry => ({
-        x: entry[selectedTemp],
+        x: isPredictor ? entry.predictor_1 : entry[selectedTemp],
         predictor_x: entry.predictor_1,
         y: entry.usage,
         begin_period: entry.begin_period,
         end_period: entry.end_period
       }));
-
-    return validData;
-  }, [data, selectedTemp]);
+  }, [data, selectedTemp, isPredictor]);
 
   const regressionLineData = React.useMemo(() => {
     if (chartData.length === 0) return [];
 
     // Get regression results for both temperature and predictor
     const tempResults = data?.dataset?.regression_results?.simple_regressions?.[selectedTemp];
-    const predictorResults = data?.dataset?.regression_results?.simple_regressions?.none;
+    const predictorResults = data?.dataset?.regression_results?.none;
     
     const params: any = {};
 
-    if (tempResults?.coefficients) {
+    if (!isPredictor && tempResults?.coefficients) {
       params.temp = {
         intercept: tempResults.coefficients[0]?.coef ?? 0,
         coefficient: tempResults.coefficients[1]?.coef ?? 0,
@@ -82,7 +85,7 @@ export function SimpleRegressionGraph() {
       };
     }
 
-    if (predictorResults?.coefficients) {
+    if (isPredictor && predictorResults?.coefficients) {
       params.predictor = {
         intercept: predictorResults.coefficients[0]?.coef ?? 0,
         coefficient: predictorResults.coefficients[1]?.coef ?? 0,
@@ -95,7 +98,7 @@ export function SimpleRegressionGraph() {
     // Create regression lines
     const lines = [];
 
-    if (params.temp) {
+    if (!isPredictor && params.temp) {
       const xMin = 0;
       const xMax = Math.max(...chartData.map(point => point.x)) * 1.2;
       lines.push({
@@ -107,7 +110,7 @@ export function SimpleRegressionGraph() {
       });
     }
 
-    if (params.predictor) {
+    if (isPredictor && params.predictor) {
       const xMin = 0;
       const xMax = Math.max(...chartData.map(point => point.predictor_x)) * 1.2;
       lines.push({
