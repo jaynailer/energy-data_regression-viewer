@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import { LineChart } from 'lucide-react';
+import createPlotlyComponent from 'react-plotly.js/factory';
+import Plotly from 'plotly.js';
 import { useDatasetContext } from '../context/DatasetContext';
 import { useRegressionType } from '../context/RegressionTypeContext';
+
+const Plot = createPlotlyComponent(Plotly);
 
 export function SimpleRegressionGraph() {
   const { data } = useDatasetContext();
@@ -14,6 +17,77 @@ export function SimpleRegressionGraph() {
   const kind = data?.dataset?.metadata?.parameters?.kind;
   const predictors = data?.dataset?.metadata?.parameters?.predictors || [];
   const isPredictor = kind === 'none' && data?.dataset?.metadata?.parameters?.predictors && predictors.length === 1;
+
+  // Create 3D data for multiple regression
+  const create3DData = () => {
+    if (!data?.dataset?.usage_data || !selectedTemp) return null;
+
+    const points = data.dataset.usage_data
+      .filter(entry => 
+        typeof entry[selectedTemp] === 'number' && 
+        !isNaN(entry[selectedTemp]) &&
+        typeof entry.usage === 'number' && 
+        !isNaN(entry.usage) &&
+        typeof entry.predictor_1 === 'number' && 
+        !isNaN(entry.predictor_1)
+      );
+
+    if (points.length === 0) return null;
+
+    // Create scatter data
+    const scatter = {
+      type: 'scatter3d',
+      mode: 'markers',
+      name: 'Data Points',
+      x: points.map(p => p[selectedTemp]),
+      y: points.map(p => p.predictor_1),
+      z: points.map(p => p.usage),
+      marker: {
+        size: 5,
+        color: '#2C5265',
+        opacity: 0.8
+      }
+    };
+
+    // Create regression surface
+    const results = data?.dataset?.regression_results?.multiple_regressions?.[`${selectedTemp}_${predictorName}`];
+    if (!results?.coefficients) return [scatter];
+
+    const intercept = results.coefficients[0]?.coef ?? 0;
+    const ddCoef = results.coefficients[1]?.coef ?? 0;
+    const predCoef = results.coefficients[2]?.coef ?? 0;
+
+    // Create grid for surface
+    const xRange = points.map(p => p[selectedTemp]);
+    const yRange = points.map(p => p.predictor_1);
+    const xMin = Math.min(...xRange);
+    const xMax = Math.max(...xRange);
+    const yMin = Math.min(...yRange);
+    const yMax = Math.max(...yRange);
+
+    const xGrid = Array.from({ length: 20 }, (_, i) => xMin + (xMax - xMin) * i / 19);
+    const yGrid = Array.from({ length: 20 }, (_, i) => yMin + (yMax - yMin) * i / 19);
+
+    const zGrid = xGrid.map(x => 
+      yGrid.map(y => intercept + ddCoef * x + predCoef * y)
+    );
+
+    const surface = {
+      type: 'surface',
+      x: xGrid,
+      y: yGrid,
+      z: zGrid,
+      colorscale: [
+        [0, '#AD435A'],
+        [1, '#AD435A']
+      ],
+      opacity: 0.7,
+      showscale: false,
+      name: 'Regression Surface'
+    };
+
+    return [scatter, surface];
+  };
 
   // Get the first available temperature on component mount
   useEffect(() => {
@@ -135,82 +209,79 @@ export function SimpleRegressionGraph() {
       </div>
       
       <div className="bg-white rounded-[25px] p-6">
-        {equation && (
+        {equation && showSimple && (
           <div className="mb-4 space-y-1 text-sm text-[#2C5265] font-mono">
             {equation}
           </div>
         )}
         <div className="h-[500px]">
-          <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart margin={{ top: 20, right: 20, bottom: 50, left: 60 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis
-              type="number"
-              dataKey="x"
-              name={isPredictor ? predictorName : selectedTemp}
-              label={{
-                value: isPredictor ? predictorName : selectedTemp.toUpperCase(), 
-                position: 'bottom', 
-                offset: 20 
+          {showSimple ? (
+            <Plot
+              data={[
+                {
+                  type: 'scatter',
+                  mode: 'markers',
+                  x: chartData.map(point => point.x),
+                  y: chartData.map(point => point.y),
+                  marker: { color: '#2C5265' },
+                  name: 'Data Points'
+                },
+                {
+                  type: 'scatter',
+                  mode: 'lines',
+                  x: regressionLineData.map(point => point.x),
+                  y: regressionLineData.map(point => point.y),
+                  line: { color: '#AD435A' },
+                  name: 'Regression Line'
+                }
+              ]}
+              layout={{
+                autosize: true,
+                margin: { l: 50, r: 50, t: 30, b: 50 },
+                showlegend: false,
+                xaxis: {
+                  title: isPredictor ? predictorName : formatTemp(selectedTemp)
+                },
+                yaxis: {
+                  title: 'Usage'
+                }
               }}
-            />
-            <YAxis
-              type="number"
-              dataKey="y"
-              name="Usage" 
-              label={{ 
-                value: 'Usage', 
-                angle: -90, 
-                position: 'insideLeft', 
-                offset: -40 
+              config={{
+                displayModeBar: false,
+                responsive: true
               }}
+              style={{ width: '100%', height: '100%' }}
             />
-            <Tooltip
-              cursor={{ strokeDasharray: '3 3' }}
-              content={({ active, payload }) => {
-                if (!active || !payload?.length) return null;
-                const data = payload[0].payload;
-                const regressionKey = isPredictor ? 'none' : selectedTemp;
-                const results = isPredictor 
-                  ? data?.dataset?.regression_results?.none
-                  : data?.dataset?.regression_results?.simple_regressions?.[selectedTemp];
-
-                const intercept = results?.coefficients?.[0]?.coef ?? 0;
-                const coefficient = results?.coefficients?.[1]?.coef ?? 0;
-                const predicted = intercept + coefficient * data.x;
-
-                return (
-                  <div className="bg-white p-2 border border-gray-200 rounded shadow">
-                    <div className="space-y-1 text-sm">
-                      <p className="text-[#2C5265]">Period: {new Date(data.begin_period).toLocaleDateString()} - {new Date(data.end_period).toLocaleDateString()}</p>
-                      <p className="text-[#2C5265]">{isPredictor ? predictorName : formatTemp(selectedTemp)}: {data.x.toFixed(2)}</p>
-                      <p className="text-[#2C5265]">Actual Usage: {data.y.toFixed(2)}</p>
-                      <p className="text-[#2C5265]">Predicted Usage: {predicted.toFixed(2)}</p>
-                    </div>
-                  </div>
-                );
+          ) : (
+            <Plot
+              data={create3DData() || []}
+              layout={{
+                autosize: true,
+                margin: { l: 0, r: 0, t: 30, b: 0 },
+                showlegend: false,
+                scene: {
+                  xaxis: {
+                    title: formatTemp(selectedTemp)
+                  },
+                  yaxis: {
+                    title: predictorName
+                  },
+                  zaxis: {
+                    title: 'Usage'
+                  },
+                  camera: {
+                    eye: { x: 1.5, y: 1.5, z: 1.5 }
+                  }
+                }
               }}
+              config={{
+                displayModeBar: true,
+                responsive: true
+              }}
+              style={{ width: '100%', height: '100%' }}
             />
-            <Scatter
-              data={chartData.map(point => ({ x: point.x, y: point.y }))}
-              fill="#2C5265"
-              shape="circle"
-              legendType="none"
-            />
-            <Scatter
-              data={regressionLineData}
-              legendType="none"
-              fill="#AD435A"
-              stroke="#AD435A"
-              strokeWidth={2}
-              line={true}
-              shape={() => null}
-              isAnimationActive={false}
-            />
-          </ScatterChart>
-          </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>
   );
-}
