@@ -21,7 +21,8 @@ export default defineConfig({
   define: {
     'process.env': {},
     global: 'globalThis',
-    Buffer: ['buffer', 'Buffer']
+    Buffer: ['buffer', 'Buffer'],
+    'probe-image-size': 'false'
   },
   base: '',
   build: {
