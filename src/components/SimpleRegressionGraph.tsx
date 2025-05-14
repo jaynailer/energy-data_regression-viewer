@@ -8,7 +8,10 @@ export function SimpleRegressionGraph() {
   const { data } = useDatasetContext();
   const { showSimple } = useRegressionType();
   const [selectedTemp, setSelectedTemp] = useState<string>('');
-  const [regressionParams, setRegressionParams] = useState<{ intercept: number; coefficient: number } | null>(null);
+  const [regressionParams, setRegressionParams] = useState<{ 
+    temp?: { intercept: number; coefficient: number; r2: number }; 
+    predictor?: { intercept: number; coefficient: number; r2: number }; 
+  } | null>(null);
   const [rSquared, setRSquared] = useState<number | null>(null);
   const [regressionPoints, setRegressionPoints] = useState<Array<{ x: number; y: number }>>([]);
 
@@ -43,49 +46,80 @@ export function SimpleRegressionGraph() {
   const chartData = React.useMemo(() => {
     if (!data?.dataset?.usage_data || !selectedTemp) return [];
 
-    return data.dataset.usage_data
+    const validData = data.dataset.usage_data
       .filter(entry => 
         typeof entry[selectedTemp] === 'number' && 
         !isNaN(entry[selectedTemp]) &&
         typeof entry.usage === 'number' && 
         !isNaN(entry.usage) &&
-        (!isPredictor || (typeof entry.predictor_1 === 'number' && !isNaN(entry.predictor_1)))
+        (typeof entry.predictor_1 === 'number' && !isNaN(entry.predictor_1))
       )
       .map(entry => ({
-        x: isPredictor ? entry.predictor_1 : entry[selectedTemp],
+        x: entry[selectedTemp],
+        predictor_x: entry.predictor_1,
         y: entry.usage,
         begin_period: entry.begin_period,
-        end_period: entry.end_period,
-        predictor_1: entry.predictor_1
+        end_period: entry.end_period
       }));
+
+    return validData;
   }, [data, selectedTemp]);
 
   const regressionLineData = React.useMemo(() => {
-    const regressionKey = isPredictor ? 'none' : selectedTemp;
-    const results = data?.dataset?.regression_results?.simple_regressions?.[regressionKey];
+    if (chartData.length === 0) return [];
+
+    // Get regression results for both temperature and predictor
+    const tempResults = data?.dataset?.regression_results?.simple_regressions?.[selectedTemp];
+    const predictorResults = data?.dataset?.regression_results?.simple_regressions?.none;
     
-    if (!results?.coefficients || chartData.length === 0) return [];
+    const params: any = {};
 
-    const intercept = results.coefficients[0]?.coef ?? 0;
-    const coefficient = results.coefficients[1]?.coef ?? 0;
-    const r2 = results.model_summary?.r_squared;
+    if (tempResults?.coefficients) {
+      params.temp = {
+        intercept: tempResults.coefficients[0]?.coef ?? 0,
+        coefficient: tempResults.coefficients[1]?.coef ?? 0,
+        r2: tempResults.model_summary?.r_squared
+      };
+    }
 
-    // Update regression parameters
-    setRegressionParams({ intercept, coefficient });
-    setRSquared(r2);
+    if (predictorResults?.coefficients) {
+      params.predictor = {
+        intercept: predictorResults.coefficients[0]?.coef ?? 0,
+        coefficient: predictorResults.coefficients[1]?.coef ?? 0,
+        r2: predictorResults.model_summary?.r_squared
+      };
+    }
 
-    // Create regression line points with extended range
-    const xMin = 0; // Start from 0
-    const xMax = Math.max(...chartData.map(point => point.x)) * 1.2; // Extend 20% beyond max
+    setRegressionParams(params);
 
-    // Create two points for the regression line
-    const points = [
-      { x: xMin, y: intercept + coefficient * xMin },
-      { x: xMax, y: intercept + coefficient * xMax }
-    ];
+    // Create regression lines
+    const lines = [];
 
-    setRegressionPoints(points);
-    return points;
+    if (params.temp) {
+      const xMin = 0;
+      const xMax = Math.max(...chartData.map(point => point.x)) * 1.2;
+      lines.push({
+        type: 'temp',
+        points: [
+          { x: xMin, y: params.temp.intercept + params.temp.coefficient * xMin },
+          { x: xMax, y: params.temp.intercept + params.temp.coefficient * xMax }
+        ]
+      });
+    }
+
+    if (params.predictor) {
+      const xMin = 0;
+      const xMax = Math.max(...chartData.map(point => point.predictor_x)) * 1.2;
+      lines.push({
+        type: 'predictor',
+        points: [
+          { x: xMin, y: params.predictor.intercept + params.predictor.coefficient * xMin },
+          { x: xMax, y: params.predictor.intercept + params.predictor.coefficient * xMax }
+        ]
+      });
+    }
+
+    return lines;
   }, [data, selectedTemp, chartData]);
 
 
@@ -131,8 +165,17 @@ export function SimpleRegressionGraph() {
       
       <div className="bg-white rounded-[25px] p-6">
         {regressionParams && (
-          <div className="mb-4 text-sm text-[#2C5265] font-mono">
-            Usage = {regressionParams.intercept.toFixed(2)} {regressionParams.coefficient >= 0 ? '+' : ''}{regressionParams.coefficient.toFixed(2)} × {isPredictor ? predictorName : formatTemp(selectedTemp)}
+          <div className="mb-4 space-y-1 text-sm text-[#2C5265] font-mono">
+            {regressionParams.temp && (
+              <div>
+                Temperature: Usage = {regressionParams.temp.intercept.toFixed(2)} {regressionParams.temp.coefficient >= 0 ? '+' : ''}{regressionParams.temp.coefficient.toFixed(2)} × {formatTemp(selectedTemp)} (R² = {regressionParams.temp.r2.toFixed(3)})
+              </div>
+            )}
+            {regressionParams.predictor && (
+              <div>
+                {predictorName}: Usage = {regressionParams.predictor.intercept.toFixed(2)} {regressionParams.predictor.coefficient >= 0 ? '+' : ''}{regressionParams.predictor.coefficient.toFixed(2)} × {predictorName} (R² = {regressionParams.predictor.r2.toFixed(3)})
+              </div>
+            )}
           </div>
         )}
         <div className="h-[500px]">
@@ -163,41 +206,55 @@ export function SimpleRegressionGraph() {
             <Tooltip
               cursor={{ strokeDasharray: '3 3' }}
               content={({ active, payload }) => {
-                if (!active || !payload?.length || !regressionParams) return null;
+                if (!active || !payload?.length) return null;
                 const data = payload[0].payload;
 
-                // Calculate predicted value for current x
-                const predictedY = regressionParams.intercept + regressionParams.coefficient * data.x;
+                // Calculate predicted values
+                const tempPredicted = regressionParams?.temp 
+                  ? regressionParams.temp.intercept + regressionParams.temp.coefficient * data.x
+                  : null;
+                const predictorPredicted = regressionParams?.predictor && data.predictor_x != null
+                  ? regressionParams.predictor.intercept + regressionParams.predictor.coefficient * data.predictor_x
+                  : null;
 
                 return (
                   <div className="bg-white p-2 border border-gray-200 rounded shadow">
-                    <p className="text-sm text-[#2C5265] font-mono border-b border-gray-100 pb-2 mb-2">Usage = {regressionParams.intercept.toFixed(2)} {regressionParams.coefficient >= 0 ? '+' : ''}{regressionParams.coefficient.toFixed(2)} × {isPredictor ? predictorName : formatTemp(selectedTemp)}</p>
                     <div className="space-y-1 text-sm">
                       <p className="text-[#2C5265]">Period: {new Date(data.begin_period).toLocaleDateString()} - {new Date(data.end_period).toLocaleDateString()}</p>
-                      <p className="text-[#2C5265]">{isPredictor ? predictorName : formatTemp(selectedTemp)}: {data.x.toFixed(2)}</p>
+                      <p className="text-[#2C5265]">{formatTemp(selectedTemp)}: {data.x.toFixed(2)}</p>
+                      {data.predictor_x != null && (
+                        <p className="text-[#2C5265]">{predictorName}: {data.predictor_x.toFixed(2)}</p>
+                      )}
                       <p className="text-[#2C5265]">Actual Usage: {data.y.toFixed(2)}</p>
-                      <p className="text-[#2C5265]">Predicted Usage: {predictedY.toFixed(2)}</p>
-                      <p className="text-[#2C5265] mt-2">R² = {rSquared?.toFixed(3) || 'N/A'}</p>
+                      {tempPredicted !== null && (
+                        <p className="text-[#2C5265]">Predicted Usage (Temperature): {tempPredicted.toFixed(2)}</p>
+                      )}
+                      {predictorPredicted !== null && (
+                        <p className="text-[#2C5265]">Predicted Usage ({predictorName}): {predictorPredicted.toFixed(2)}</p>
+                      )}
                     </div>
                   </div>
                 );
               }}
             />
             <Scatter
-              data={chartData}
-              fill="#2C5265" 
-              shape="circle" 
+              data={chartData.map(point => ({ x: point.x, y: point.y }))}
+              fill="#2C5265"
+              shape="circle"
             />
-            <Scatter
-              data={regressionLineData}
-              legendType="none"
-              fill="#AD435A"
-              stroke="#AD435A"
-              strokeWidth={2}
-              line={true}
-              shape={() => null}
-              isAnimationActive={false}
-            />
+            {regressionLineData.map((line, index) => (
+              <Scatter
+                key={line.type}
+                data={line.points}
+                legendType="none"
+                fill={line.type === 'temp' ? '#AD435A' : '#4CAF50'}
+                stroke={line.type === 'temp' ? '#AD435A' : '#4CAF50'}
+                strokeWidth={2}
+                line={true}
+                shape={() => null}
+                isAnimationActive={false}
+              />
+            ))}
           </ScatterChart>
           </ResponsiveContainer>
         </div>
