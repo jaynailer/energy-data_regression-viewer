@@ -11,6 +11,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
+    include: ['probe-image-size'],
     exclude: ['lucide-react'],
     esbuildOptions: {
       define: {
