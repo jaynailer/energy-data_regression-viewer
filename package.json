@@ -13,14 +13,13 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.48.1",
     "buffer": "^6.0.3",
-    "probe-image-size": "^7.2.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
     "recharts": "^2.12.2",
-    "plotly.js": "^2.30.0",
+    "plotly.js-dist": "^2.30.0",
     "react-plotly.js": "^2.6.0",
     "three": "^0.162.0",
     "@types/three": "^0.162.0"
