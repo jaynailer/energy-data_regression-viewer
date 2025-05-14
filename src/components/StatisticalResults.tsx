@@ -2,40 +2,19 @@ import React from 'react';
 import { BarChart3, HelpCircle } from 'lucide-react';
 import { useDatasetContext } from '../context/DatasetContext';
 
-interface TooltipProps {
-  title: string;
-  description: string;
-  guidance: string;
-}
-
-function Tooltip({ title, description, guidance }: TooltipProps) {
-  return (
-    <div className="group relative flex items-center">
-      <div className="font-medium text-[#2C5265]">{title}</div>
-      <HelpCircle className="w-4 h-4 ml-2 text-[#7984A5]" />
-      <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-72 p-3 bg-white rounded-lg shadow-lg text-sm z-10 pointer-events-none">
-        <div className="font-medium text-[#2C5265] mb-2">{title}</div>
-        <p className="text-[#2C5265] mb-2">{description}</p>
-        <p className="text-[#7984A5] text-xs">What to look for: {guidance}</p>
-      </div>
-    </div>
-  );
-}
+import { Tooltip } from './Tooltip';
 
 export function StatisticalResults() {
   const { data } = useDatasetContext();
 
-  const kind = data?.dataset?.metadata?.parameters?.kind;
-  const regressionResults = kind === 'none' 
-    ? { none: data?.dataset?.regression_results?.none }
-    : (data?.dataset?.regression_results || {});
+  const regressionResults = data?.dataset?.regression_results?.multiple_regressions || {};
 
   const formatEquation = (results: any) => {
     if (!results?.coefficients) return 'N/A';
     
-    const intercept = results.coefficients[0]?.coef != null && !isNaN(results.coefficients[0].coef) ? results.coefficients[0].coef : 0;
-    const coefficient = results.coefficients[1]?.coef != null && !isNaN(results.coefficients[1].coef) ? results.coefficients[1].coef : 0;
-    const variable = results.coefficients[1]?.variable || '';
+    const intercept = results.coefficients.find(c => c.variable === 'const')?.coef ?? 0;
+    const coefficient = results.coefficients.find(c => c.variable !== 'const')?.coef ?? 0;
+    const variable = results.coefficients.find(c => c.variable !== 'const')?.variable || '';
     
     return `${intercept.toFixed(2)} ${coefficient >= 0 ? '+' : ''}${coefficient.toFixed(2)} × ${variable}`;
   };
@@ -98,8 +77,8 @@ export function StatisticalResults() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.coefficients?.[1]?.p_value != null && !isNaN(result.coefficients[1].p_value) 
-                      ? result.coefficients[1].p_value.toFixed(6)
+                    {result?.coefficients?.find(c => c.variable !== 'const')?.p_value != null
+                      ? result.coefficients.find(c => c.variable !== 'const')?.p_value.toFixed(6)
                       : 'N/A'}
                   </td>
                 ))}
@@ -130,10 +109,8 @@ export function StatisticalResults() {
                 </td>
                 {Object.values(regressionResults).map((result, index) => (
                   <td key={index} className="py-2 px-4">
-                    {result?.model_summary?.prob_f_statistic != null && 
-                     typeof result.model_summary.prob_f_statistic === 'number' && 
-                     !isNaN(result.model_summary.prob_f_statistic)
-                      ? result.model_summary.prob_f_statistic.toFixed(6)
+                    {result?.model_summary?.prob_f_statistic
+                      ? result.model_summary.prob_f_statistic.replace('e-', '×10⁻')
                       : 'N/A'}
                   </td>
                 ))}
