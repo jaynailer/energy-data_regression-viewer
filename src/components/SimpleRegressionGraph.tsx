@@ -13,17 +13,17 @@ export function SimpleRegressionGraph() {
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
   const kind = data?.dataset?.metadata?.parameters?.kind;
   const predictors = data?.dataset?.metadata?.parameters?.predictors || [];
-  const isPredictor = kind === 'none' && predictors.length === 1;
+  const isPredictor = kind === 'none' && data?.dataset?.metadata?.parameters?.predictors && predictors.length === 1;
 
   // Get the first available temperature on component mount
   useEffect(() => {
     if (!data?.dataset?.usage_data?.[0]) return;
     
-    const temps = Object.keys(data.dataset.usage_data[0])
+    const temps = data?.dataset?.usage_data && Object.keys(data.dataset.usage_data[0])
       .filter(key => key.match(/^(cdd|hdd)\(\d+(?:\.\d+)?\)$/i))
       .sort();
     
-    if (temps.length > 0) {
+    if (temps && temps.length > 0) {
       setSelectedTemp(temps[0]);
     }
   }, [data]);
@@ -61,6 +61,8 @@ export function SimpleRegressionGraph() {
         begin_period: entry.begin_period,
         end_period: entry.end_period
       }));
+
+    return validPoints;
   }, [data, selectedTemp, isPredictor]);
 
   const regressionLineData = React.useMemo(() => {
@@ -111,8 +113,8 @@ export function SimpleRegressionGraph() {
             {isPredictor ? `${predictorName} Regression` : 'Simple Regression'}
           </h2>
         </div>
-        {!isPredictor && <div className="flex gap-2">
-          {Object.keys(data?.dataset?.usage_data?.[0] || {})
+        {!isPredictor && data?.dataset?.usage_data?.[0] && <div className="flex gap-2">
+          {Object.keys(data.dataset.usage_data[0])
             .filter(key => key.match(/^(cdd|hdd)\(\d+(?:\.\d+)?\)$/i))
             .sort()
             .map(temp => (
