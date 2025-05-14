@@ -10,6 +10,7 @@ export function SimpleRegressionGraph() {
   const [selectedTemp, setSelectedTemp] = useState<string>('');
   const [regressionParams, setRegressionParams] = useState<{ intercept: number; coefficient: number } | null>(null);
   const [rSquared, setRSquared] = useState<number | null>(null);
+  const [regressionPoints, setRegressionPoints] = useState<Array<{ x: number; y: number }>>([]);
 
   const predictorName = data?.dataset?.metadata?.parameters?.predictors?.[0]?.name || 'Predictor 1';
   const kind = data?.dataset?.metadata?.parameters?.kind;
@@ -75,17 +76,19 @@ export function SimpleRegressionGraph() {
     const xMin = 0; // Start from 0
     const xMax = Math.max(...chartData.map(point => point.x)) * 1.2; // Extend 20% beyond max
 
-    // Create regression line points
-    return [
-      {
+    // Create more points for smoother line and better tooltip interaction
+    const numPoints = 100;
+    const step = (xMax - xMin) / (numPoints - 1);
+    const points = Array.from({ length: numPoints }, (_, i) => {
+      const x = xMin + i * step;
+      return {
         x: xMin,
         y: intercept + coefficient * xMin
-      },
-      {
-        x: xMax,
-        y: intercept + coefficient * xMax
-      }
-    ];
+      };
+    });
+
+    setRegressionPoints(points);
+    return points;
   }, [data, selectedTemp, chartData]);
 
 
@@ -163,16 +166,19 @@ export function SimpleRegressionGraph() {
             <Tooltip
               cursor={{ strokeDasharray: '3 3' }}
               content={({ active, payload }) => {
-                if (!active || !payload?.length) return null;
+                if (!active || !payload?.length || !regressionParams) return null;
                 const data = payload[0].payload;
+                
+                // Calculate predicted value for current x
+                const predictedY = regressionParams.intercept + regressionParams.coefficient * data.x;
+                
                 return (
                   <div className="bg-white p-2 border border-gray-200 rounded shadow">
-                    {regressionParams && (
-                      <div className="mb-2 text-sm text-[#2C5265] font-mono border-b border-gray-100 pb-2">
-                        <p>Usage = {regressionParams.intercept.toFixed(2)} {regressionParams.coefficient >= 0 ? '+' : ''}{regressionParams.coefficient.toFixed(2)} × {isPredictor ? predictorName : formatTemp(selectedTemp)}</p>
-                        <p>R² = {rSquared?.toFixed(3) || 'N/A'}</p>
-                      </div>
-                    )}
+                    <div className="mb-2 text-sm text-[#2C5265] font-mono border-b border-gray-100 pb-2">
+                      <p>Usage = {regressionParams.intercept.toFixed(2)} {regressionParams.coefficient >= 0 ? '+' : ''}{regressionParams.coefficient.toFixed(2)} × {isPredictor ? predictorName : formatTemp(selectedTemp)}</p>
+                      <p>R² = {rSquared?.toFixed(3) || 'N/A'}</p>
+                      <p className="mt-1">Predicted: {predictedY.toFixed(2)}</p>
+                    </div>
                     <p className="text-sm text-[#2C5265]">
                       {isPredictor ? predictorName : formatTemp(selectedTemp)}: {data.x.toFixed(2)}
                     </p>
@@ -200,11 +206,13 @@ export function SimpleRegressionGraph() {
             />
             <Scatter
               data={regressionLineData}
+              legendType="none"
               fill="#AD435A"
               stroke="#AD435A"
               strokeWidth={2}
               line={true}
               shape={() => null}
+              isAnimationActive={false}
             />
           </ScatterChart>
           </ResponsiveContainer>
