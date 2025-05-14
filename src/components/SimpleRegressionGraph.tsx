@@ -35,7 +35,9 @@ export function SimpleRegressionGraph() {
     const match = temp.match(/(hdd|cdd)\((\d+(?:\.\d+)?)\)/i);
     if (!match) return temp;
     const [_, kind, baseTemp] = match;
-    return `${kind.toUpperCase()} (${parseFloat(baseTemp)}°C)`;
+    const unit = data?.dataset?.metadata?.parameters?.unit || 'metric';
+    const unitSymbol = unit === 'imperial' ? '°F' : unit === 'metric' ? '°C' : '';
+    return `${kind.toUpperCase()} (${parseFloat(baseTemp)}${unitSymbol})`;
   };
 
   const chartData = React.useMemo(() => {
