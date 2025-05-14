@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart } from 'lucide-react';
 import createPlotlyComponent from 'react-plotly.js/factory';
-import Plotly from 'plotly.js';
+import Plotly from 'plotly.js-dist';
 import { useDatasetContext } from '../context/DatasetContext';
 import { useRegressionType } from '../context/RegressionTypeContext';
 
